@@ -11,7 +11,7 @@
                 <li class="item-nav"><a class="link" href="#">Contato</a></li>
             </ul>
         </nav>
-        <button class="button">Fazer Login</button>
+        <router-link to="/login"><button class="button">Fazer Login</button></router-link>
     </header>
 </template>
 
