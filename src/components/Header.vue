@@ -7,8 +7,8 @@
         <h3 class="logo"><div class="logo1">EPI</div><div class="logo2">MANAGER</div></h3>
         <nav class="navigation">
             <ul class="list-nav">
-                <li class="item-nav"><a class="link" href="#">Home</a></li>
-                <li class="item-nav"><a class="link" href="#">Contato</a></li>
+                <li class="item-nav"><router-link class="link" to="/">Home</router-link></li>
+                <li class="item-nav"><router-link class="link" to="/contato">Contato</router-link></li>
             </ul>
         </nav>
         <router-link to="/login"><button class="button">Fazer Login</button></router-link>
@@ -54,6 +54,25 @@
     color: var(--color-gray);
     font-weight: bold;
     font-family: var(--font-primary);
+    padding-bottom: 4px;
+    position: relative;
+}
+
+.link::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 2px;
+    background-color: var(--highlights);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.link.router-link-exact-active::after {
+    width: 100%;
 }
 .button {
     background-color: var(--highlights);

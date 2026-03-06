@@ -4,5 +4,5 @@ import Header from '../components/Header.vue'
 
 <template>
     <Header />
-    <h1>Bem vindo a tela de login</h1>
+    <h1>Bem vindo a tela de contato</h1>
 </template>
