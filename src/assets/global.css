@@ -3,7 +3,8 @@
 
 :root {
   --highlights: #f6821f;
-  --color-gray: #48473d;
+  --highlights-hover: hsl(28, 100%, 62%);
+  --color-gray: #3d3c3a;
   --font-primary: 'Istok Web', sans-serif;
   --font-secondary: 'Kaisei HarunoUmi', serif;
 }

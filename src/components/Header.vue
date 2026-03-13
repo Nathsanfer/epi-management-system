@@ -16,7 +16,6 @@
 </template>
 
 <style scoped>
-
 .header {
     display: flex;
     font-family: var(--font-primary);
@@ -84,6 +83,10 @@
     cursor: pointer;
     font-weight: bold;
     font-family: var(--font-primary);
+}
+
+.button:hover {
+    background-color: var(--highlights-hover);
 }
 
 </style>
