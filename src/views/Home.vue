@@ -8,6 +8,8 @@ import { computed, ref } from 'vue'
   Computed -> cria valores derivados de outros valores reativos.
 */
 
+// --- SCRIPTS DA SEÇÃO DE DEPOIMENTOS ---
+
 // Array com dados dos depoimentos
 const assessements = ref([
   {
@@ -87,6 +89,47 @@ const goToScene = (sceneIndex) => {
   currentScene.value = sceneIndex
 }
 
+// --- SCRIPTS DA SEÇÃO DE PERGUNTAS FREQUENTES ---
+
+// Array de perguntas frequentes
+const faqs = ref([
+  {
+    id: 1,
+    question: 'Como posso me cadastrar na plataforma?',
+    answer: 'Para se cadastrar, acesse a página de login e clique em "Nao tenho uma conta". Preencha o formulário com suas informações e siga as instruções para criar sua conta.'
+  },
+  {
+    id: 2,
+    question: 'Quais são os recursos disponíveis para gestão de EPIs?',
+    answer: 'Nossa plataforma oferece recursos como controle de prazos de validade, segurança e controle de acesso, rastreabilidade completa, controle de estoque em tempo real, geração de relatórios e uma interface responsiva e intuitiva.'
+  },
+  {
+    id: 3,
+    question: 'A plataforma é compatível com dispositivos móveis?',
+    answer: 'Sim, nossa plataforma é responsiva e pode ser acessada em dispositivos móveis, como smartphones e tablets, proporcionando uma experiência de uso consistente em diferentes telas.'
+  },
+  {
+    id: 4,
+    question: 'Como posso solicitar uma demonstração da plataforma?',
+    answer: 'Para solicitar uma demonstração, acesse a seção "Contato" do nosso site e preencha o formulário de contato com suas informações e interesse em uma demonstração. Nossa equipe entrará em contato para agendar uma apresentação personalizada.'
+  },
+  {
+    id: 5,
+    question: 'Quais são as opções de suporte disponíveis?',
+    answer: 'Oferecemos suporte por meio de chat ao vivo, e-mail e telefone. Nossa equipe de suporte está disponível para ajudar com qualquer dúvida ou problema que você possa ter.'
+  }
+])
+
+// Controla qual pergunta está aberta no accordion
+const expandedFaqId = ref(null)
+
+// 
+const toggleFaq = (id) => {
+  expandedFaqId.value = expandedFaqId.value === id ? null : id
+}
+
+const isFaqExpanded = (id) => expandedFaqId.value === id
+
 </script>
 
 <template>
@@ -95,12 +138,12 @@ const goToScene = (sceneIndex) => {
   <main class="content">
     <!-- SEÇÃO DE APRESENTAÇÃO - BANNER -->
     <section class="hero">
-      <div class="conteiner-title">
+      <div class="container-title">
         <h1 class="title1">Conheça essa nova plataforma</h1>
         <h1 class="title2">Gestão e Controle de EPIs </h1>
       </div>
 
-      <div class="conteiner-info">
+      <div class="container-info">
         <div class="tags">
           <ul class="list-tags">
             <li class="item-tag">Gestão de Prazos de Validade</li>
@@ -162,7 +205,8 @@ const goToScene = (sceneIndex) => {
               <div v-for="(scene, sceneIndex) in scenes" :key="sceneIndex" class="carousel-slide">
                 <article v-for="assessment in scene" :key="assessment.id" class="card">
                   <div class="assessment">
-                    <img v-for="star in 5" :key="star" class="image-star" src="../assets/estrela.png" alt="Estrela de avaliação" />
+                    <img v-for="star in 5" :key="star" class="image-star" src="../assets/estrela.png"
+                      alt="Estrela de avaliação" />
                     <p class="text-assessment">5.0</p>
                   </div>
                   <h4 class="title-card">{{ assessment.title }}</h4>
@@ -186,14 +230,9 @@ const goToScene = (sceneIndex) => {
         </div>
 
         <div class="carousel-dots">
-          <button
-            v-for="(scene, sceneIndex) in scenes"
-            :key="sceneIndex"
-            class="carousel-dot"
-            :class="{ 'is-active': sceneIndex === currentScene }"
-            :aria-label="`Ir para a cena ${sceneIndex + 1}`"
-            @click="goToScene(sceneIndex)"
-          ></button>
+          <button v-for="(scene, sceneIndex) in scenes" :key="sceneIndex" class="carousel-dot"
+            :class="{ 'is-active': sceneIndex === currentScene }" :aria-label="`Ir para a cena ${sceneIndex + 1}`"
+            @click="goToScene(sceneIndex)"></button>
         </div>
 
 
@@ -203,18 +242,170 @@ const goToScene = (sceneIndex) => {
       <div class="container-decoration" aria-hidden="true"></div>
     </section>
 
+    <!-- SEÇÃO DE PERGUNTAS FREQUENTES -->
+    <section class="questions">
+      <div class="container-title-questions">
+        <h1 class="title1">Perguntas?</h1>
+        <h1 class="title2">Olhe aqui.</h1>
+      </div>
+      <div class="container-information">
+        <div class="container-questions">
+          <div v-for="item in faqs" :key="item.id" class="accordion-question">
+            <button class="accordion-header" :class="{ 'is-open': isFaqExpanded(item.id) }"
+              :aria-expanded="isFaqExpanded(item.id)" @click="toggleFaq(item.id)">
+              <span class="accordion-title">{{ item.question }}</span>
+              <span class="accordion-icon" :class="{ 'is-open': isFaqExpanded(item.id) }" aria-hidden="true"></span>
+            </button>
+
+            <transition name="accordion">
+              <div v-if="isFaqExpanded(item.id)" class="accordion-content">
+                <p class="accordion-answer">{{ item.answer }}</p>
+              </div>
+            </transition>
+          </div>
+        </div>
+        <div class="container-information-image">
+          <div class="more-questions">
+
+          </div>
+          <img class="image-information" src="../assets/question-img.png" alt="Pessoa com dúvida" />
+
+        </div>
+      </div>
+    </section>
+
   </main>
 
 </template>
 
 <style scoped>
+.questions {
+  background-color: #e7e7e7;
+  margin: 0;
+  padding: 4rem;
+}
+
+.container-title-questions {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.container-information {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  padding: 3rem;
+  gap: 2rem;
+}
+
+.container-questions {
+  width: 600px;
+  display: flex;
+  gap: 1.5rem;
+  flex-direction: column;
+}
+
+.container-information-image {
+  display: flex;
+  gap: 3rem;
+  flex-direction: column;
+}
+
+.more-questions {
+  background-color: var(--color-gray);
+  width: 100%;
+  height: 15rem;
+  border-radius: 30px;
+}
+
+.accordion-header {
+  background-color: #fff;
+  border: none;
+  width: 100%;
+  padding: 1.2rem;
+  border-radius: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.accordion-header.is-open {
+  background-color: var(--color-gray);
+  border-radius: 30px 30px 0 0;
+  border: 1px solid var(--color-gray);
+}
+
+.accordion-header.is-open .accordion-title,
+.accordion-header.is-open .accordion-icon {
+  color: #fff;
+}
+
+.accordion-title {
+  font-size: 1.1rem;
+  color: #000;
+  font-weight: 500;
+  margin: 0;
+}
+
+.accordion-icon {
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  color: #000;
+  transform: rotate(45deg);
+  transition: transform 0.3s ease, color 0.25s ease;
+}
+
+.accordion-icon.is-open {
+  transform: rotate(-135deg);
+}
+
+.accordion-content {
+  background-color: var(--color-gray);
+  border-radius: 0 0 30px 30px;
+  padding: 1rem 1.2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.accordion-answer {
+  font-size: 1rem;
+  color: #ffffff;
+  margin: 0;
+}
+
+.accordion-enter-active,
+.accordion-leave-active {
+  transition: max-height 0.28s ease, opacity 0.22s ease, padding 0.28s ease;
+  overflow: hidden;
+}
+
+.accordion-enter-from,
+.accordion-leave-to {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.accordion-enter-to,
+.accordion-leave-from {
+  max-height: 280px;
+  opacity: 1;
+}
+
 /* Estilização da Hero */
 
 .content {
   font-family: var(--font-primary);
 }
 
-.conteiner-title {
+.container-title {
   padding: 2.5rem 4rem 1.5rem 4rem;
   margin: 0 5rem;
 }
@@ -235,7 +426,7 @@ const goToScene = (sceneIndex) => {
   font-family: var(--font-secondary);
 }
 
-.conteiner-info {
+.container-info {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -362,7 +553,7 @@ const goToScene = (sceneIndex) => {
 
 .container-content {
   width: 100%;
-  min-height: 30rem;
+  min-height: 36rem;
   background-color: var(--color-gray);
   display: flex;
   flex-direction: column;
@@ -473,7 +664,7 @@ const goToScene = (sceneIndex) => {
 
 .text-assessment {
   font-size: 1.1rem;
-  color: white; 
+  color: white;
 }
 
 .title-card {
@@ -538,5 +729,4 @@ const goToScene = (sceneIndex) => {
     display: none;
   }
 }
-
 </style>
