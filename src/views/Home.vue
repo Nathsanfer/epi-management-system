@@ -56,7 +56,7 @@ const assessements = ref([
   }
 ])
 
-// Controlar a cena atual do carrossel / Controle o número de cards por cena
+// Controla qual cena do carrossel está sendo exibida
 const currentScene = ref(0)
 const cardsPerScene = 2
 
@@ -120,14 +120,15 @@ const faqs = ref([
   }
 ])
 
-// Controla qual pergunta está aberta no accordion
-const expandedFaqId = ref(null)
+// Controla qual pergunta está aberta no accordion (inicia com a segunda aberta)
+const expandedFaqId = ref(2)
 
-// 
+// Alterna a expansão da pergunta selecionada
 const toggleFaq = (id) => {
   expandedFaqId.value = expandedFaqId.value === id ? null : id
 }
 
+// Verifica se a pergunta está expandida
 const isFaqExpanded = (id) => expandedFaqId.value === id
 
 </script>
@@ -266,7 +267,20 @@ const isFaqExpanded = (id) => expandedFaqId.value === id
         </div>
         <div class="container-information-image">
           <div class="more-questions">
+            <div class="more-questions-top">
+              <div class="more-questions-icon" aria-hidden="true">
+                <span>...</span>
+              </div>
+              <h3 class="more-questions-title">Voce tem perguntas diferentes?</h3>
+            </div>
 
+            <p class="more-questions-text">
+              Nossa equipe respondera a todas as suas perguntas. Garantimos uma resposta rapida.
+            </p>
+
+            <RouterLink class="more-questions-button" to="/contato">
+              Entre em Contato
+            </RouterLink>
           </div>
           <img class="image-information" src="../assets/question-img.png" alt="Pessoa com dúvida" />
 
@@ -318,6 +332,83 @@ const isFaqExpanded = (id) => expandedFaqId.value === id
   width: 100%;
   height: 15rem;
   border-radius: 30px;
+  padding: 1.5rem 1.8rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.3rem;
+}
+
+.more-questions-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.more-questions-icon {
+  width: 54px;
+  height: 40px;
+  border-radius: 20px;
+  background-color: var(--highlights);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.more-questions-icon::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 14px;
+  border-width: 8px 6px 0 6px;
+  border-style: solid;
+  border-color: var(--highlights) transparent transparent transparent;
+}
+
+.more-questions-icon span {
+  color: var(--color-gray);
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+  transform: translateY(-2px);
+}
+
+.more-questions-title {
+  font-family: var(--font-secondary);
+  color: #fff;
+  font-weight: 500;
+  margin: 0;
+  max-width: 230px;
+  font-size: 1.3rem;
+  line-height: 1.15;
+}
+
+.more-questions-text {
+  color: #ffffffd7;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.4;
+  max-width: 330px;
+}
+
+.more-questions-button {
+  align-self: center;
+  border: 0;
+  background-color: var(--highlights);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 1rem;
+  padding: 0.9rem 1.9rem;
+  border-radius: 16px;
+  transition: filter 0.2s ease;
+}
+
+.more-questions-button:hover {
+  filter: brightness(0.95);
 }
 
 .accordion-header {
