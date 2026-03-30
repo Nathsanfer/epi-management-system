@@ -1,6 +1,7 @@
 <script setup>
-// Importação do componente Header e das funções do Vue
+// Importação dos componentes e das funções do Vue
 import Header from '../components/Header.vue'
+import Footer from '../components/Footer.vue'
 import { computed, ref } from 'vue'
 
 /* 
@@ -345,6 +346,8 @@ const isFaqExpanded = (id) => expandedFaqId.value === id
     </section>
 
   </main>
+
+  <Footer />
 
 </template>
 
