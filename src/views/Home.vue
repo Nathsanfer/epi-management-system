@@ -120,6 +120,34 @@ const faqs = ref([
   }
 ])
 
+const services = ref([
+  {
+    id: 1,
+    title: 'Cadastro Centralizado',
+    description: 'Na minha empresa utilizamos essa plataforma para um melhor controle do nosso almoxarifado de Equipamentos'
+  },
+  {
+    id: 2,
+    title: 'Cadastro Centralizado',
+    description: 'Na minha empresa utilizamos essa plataforma para um melhor controle do nosso almoxarifado de Equipamentos'
+  },
+  {
+    id: 3,
+    title: 'Cadastro Centralizado',
+    description: 'Na minha empresa utilizamos essa plataforma para um melhor controle do nosso almoxarifado de Equipamentos'
+  },
+  {
+    id: 4,
+    title: 'Cadastro Centralizado',
+    description: 'Na minha empresa utilizamos essa plataforma para um melhor controle do nosso almoxarifado de Equipamentos'
+  },
+  {
+    id: 5,
+    title: 'Cadastro Centralizado',
+    description: 'Na minha empresa utilizamos essa plataforma para um melhor controle do nosso almoxarifado de Equipamentos'
+  }
+])
+
 // Controla qual pergunta está aberta no accordion (inicia com a segunda aberta)
 const expandedFaqId = ref(2)
 
@@ -183,6 +211,34 @@ const isFaqExpanded = (id) => expandedFaqId.value === id
             <span class="stat-label">Associados na empresa</span>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- SEÇÃO DE SERVIÇOS -->
+    <section class="services">
+      <div class="section-cards">
+        <div class="info-service">
+          <h1 class="title1">Nossos Servicos</h1>
+          <h1 class="title2">O Que Oferecemos</h1>
+          <p>
+            Na minha empresa utilizamos essa plataforma para um melhor controle do nosso almoxarifado de Equipamentos
+          </p>
+        </div>
+
+        <article v-for="service in services" :key="service.id" class="card-service">
+          <div class="service-heading">
+            <span class="service-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 21V19C20 16.7909 18.2091 15 16 15H8C5.79086 15 4 16.7909 4 19V21" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" />
+              </svg>
+            </span>
+            <h3>{{ service.title }}</h3>
+          </div>
+          <p>{{ service.description }}</p>
+          <span class="service-bottom-line" aria-hidden="true"></span>
+        </article>
       </div>
     </section>
 
@@ -293,6 +349,121 @@ const isFaqExpanded = (id) => expandedFaqId.value === id
 </template>
 
 <style scoped>
+.services {
+  background-color: #ffffff;
+  display: flex;
+  justify-content: center;
+  padding: 5rem 0 4rem 0;
+}
+
+.section-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  width: min(100%, 1200px);
+  padding: 0 2.5rem;
+}
+
+.info-service {
+  padding: 0.1rem 0rem;
+}
+
+.info-service p {
+  max-width: 320px;
+  margin-top: 1rem;
+  font-size: 1.1rem;
+  color: #4b4b4b;
+  font-family: var(--font-primary);
+  line-height: 1.35;
+}
+
+.card-service {
+  position: relative;
+  background-color: #fff;
+  border-radius: 20px;
+  min-height: 200px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  padding: 1.8rem 1.7rem 2.1rem;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 1.2rem;
+}
+
+.service-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.95rem;
+}
+
+.service-icon {
+  width: 42px;
+  height: 32px;
+  border: 3px solid var(--highlights);
+  border-radius: 4px;
+  color: var(--highlights);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.service-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.card-service h3 {
+  margin: 0;
+  color: #363636;
+  font-weight: 500;
+  font-size: 1.3rem;
+  line-height: 1.2;
+  font-family: var(--font-primary);
+}
+
+.card-service p {
+  margin: 0;
+  color: #444;
+  text-align: center;
+  font-size: 1rem;
+  line-height: 1.35;
+  padding: 0 0.35rem;
+}
+
+.service-bottom-line {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 7px;
+  background-color: var(--highlights);
+}
+
+@media (max-width: 1080px) {
+  .section-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .info-service {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 700px) {
+  .section-cards {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+    padding: 0 1rem;
+  }
+
+  .card-service {
+    min-height: 210px;
+  }
+}
+
 .questions {
   background-color: #e7e7e7;
   margin: 0;
