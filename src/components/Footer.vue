@@ -106,8 +106,9 @@
 .footer-separator {
 	height: 1px;
 	max-width: 1200px;
-	margin: 0 auto;
-	background-color: #d7d7d7;
+	margin: auto;
+	background-color: #d9d8d8;
+    margin-bottom: 1.5rem;
 }
 
 .footer-bottom {
