@@ -17,9 +17,8 @@
 			<div class="divider" aria-hidden="true"></div>
 
 			<p class="footer-description">
-				Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the
-				industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and
-				scrambled it to make a type specimen book. It has survived not only five centuries.
+				O EPI Manager centraliza o controle de EPIs no SENAI, substituindo registros manuais por um processo
+				organizado, com rastreabilidade, controle de estoque em tempo real e apoio a decisoes mais seguras.
 			</p>
 		</div>
 
@@ -100,6 +99,7 @@
 	font-size: 1rem;
 	line-height: 1.35;
     margin-left: 3rem;  
+    margin-top: 1rem;
 	font-family: var(--font-primary);
 }
 

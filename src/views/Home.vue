@@ -9,6 +9,36 @@ import { computed, ref } from 'vue'
   Computed -> cria valores derivados de outros valores reativos.
 */
 
+// --- SCRIPTS DA SEÇÃO DE SERVIÇOS ---
+
+const services = ref([
+  {
+    id: 1,
+    title: 'Gestão de Prazos',
+    description: 'Acompanhe vencimentos e receba alertas para reposição no momento certo, evitando atrasos e riscos no uso dos EPIs.'
+  },
+  {
+    id: 2,
+    title: 'Rastreabilidade',
+    description: 'Identifique com precisão quais funcionários, alunos e visitantes receberam cada EPI e mantenha todo o histórico organizado.'
+  },
+  {
+    id: 3,
+    title: 'Geração de Relatórios',
+    description: 'Transforme dados de distribuição e estoque em relatórios gerenciais para apoiar decisões estratégicas da instituição.'
+  },
+  {
+    id: 4,
+    title: 'Controle de Acesso',
+    description: 'Garanta que apenas usuários autorizados acessem áreas e atividades, com controle confiável da entrega de EPIs.'
+  },
+  {
+    id: 5,
+    title: 'Estoque em Tempo Real',
+    description: 'Monitore quantidades disponíveis em tempo real para evitar falta ou excesso de EPIs e melhorar o planejamento.'
+  }
+])
+
 // --- SCRIPTS DA SEÇÃO DE DEPOIMENTOS ---
 
 // Array com dados dos depoimentos
@@ -121,34 +151,6 @@ const faqs = ref([
   }
 ])
 
-const services = ref([
-  {
-    id: 1,
-    title: 'Cadastro Centralizado',
-    description: 'Na minha empresa utilizamos essa plataforma para um melhor controle do nosso almoxarifado de Equipamentos'
-  },
-  {
-    id: 2,
-    title: 'Cadastro Centralizado',
-    description: 'Na minha empresa utilizamos essa plataforma para um melhor controle do nosso almoxarifado de Equipamentos'
-  },
-  {
-    id: 3,
-    title: 'Cadastro Centralizado',
-    description: 'Na minha empresa utilizamos essa plataforma para um melhor controle do nosso almoxarifado de Equipamentos'
-  },
-  {
-    id: 4,
-    title: 'Cadastro Centralizado',
-    description: 'Na minha empresa utilizamos essa plataforma para um melhor controle do nosso almoxarifado de Equipamentos'
-  },
-  {
-    id: 5,
-    title: 'Cadastro Centralizado',
-    description: 'Na minha empresa utilizamos essa plataforma para um melhor controle do nosso almoxarifado de Equipamentos'
-  }
-])
-
 // Controla qual pergunta está aberta no accordion (inicia com a segunda aberta)
 const expandedFaqId = ref(2)
 
@@ -166,6 +168,7 @@ const isFaqExpanded = (id) => expandedFaqId.value === id
   <Header />
 
   <main class="content">
+
     <!-- SEÇÃO DE APRESENTAÇÃO - BANNER -->
     <section class="hero">
       <div class="container-title">
@@ -188,8 +191,7 @@ const isFaqExpanded = (id) => expandedFaqId.value === id
         <div class="divisor"></div>
 
         <div class="container-text">
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
-            dolore magna aliqua. Ut enim ad minim veniam, quis</p>
+          <p>O EPI Manager centraliza e digitaliza o processo, substituindo registros manuais por um controle unico e confiavel.</p>
         </div>
       </div>
 
@@ -198,18 +200,18 @@ const isFaqExpanded = (id) => expandedFaqId.value === id
 
         <div class="stats">
           <div class="stat-item">
-            <span class="stat-number">640+</span>
-            <span class="stat-label">Associados na empresa</span>
+            <span class="stat-number">20+</span>
+            <span class="stat-label">Equiapamentos Cadastrados</span>
           </div>
           <div class="stat-divisor"></div>
           <div class="stat-item">
-            <span class="stat-number">640+</span>
-            <span class="stat-label">Associados na empresa</span>
+            <span class="stat-number">35+</span>
+            <span class="stat-label">Solicitantes Registrados</span>
           </div>
           <div class="stat-divisor"></div>
           <div class="stat-item">
-            <span class="stat-number">640+</span>
-            <span class="stat-label">Associados na empresa</span>
+            <span class="stat-number">20+</span>
+            <span class="stat-label">Movimentações Salvas</span>
           </div>
         </div>
       </div>
@@ -222,7 +224,7 @@ const isFaqExpanded = (id) => expandedFaqId.value === id
           <h1 class="title1">Nossos Servicos</h1>
           <h1 class="title2">O Que Oferecemos</h1>
           <p>
-            Na minha empresa utilizamos essa plataforma para um melhor controle do nosso almoxarifado de Equipamentos
+            Solucoes para digitalizar o controle de EPIs, melhorar a rastreabilidade e tornar a gestao mais segura e eficiente.
           </p>
         </div>
 
@@ -352,319 +354,7 @@ const isFaqExpanded = (id) => expandedFaqId.value === id
 </template>
 
 <style scoped>
-.services {
-  background-color: #ffffff;
-  display: flex;
-  justify-content: center;
-  padding: 5rem 0 4rem 0;
-}
-
-.section-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
-  width: min(100%, 1200px);
-  padding: 0 2.5rem;
-}
-
-.info-service {
-  padding: 0.1rem 0rem;
-}
-
-.info-service p {
-  max-width: 320px;
-  margin-top: 1rem;
-  font-size: 1.1rem;
-  color: #4b4b4b;
-  font-family: var(--font-primary);
-  line-height: 1.35;
-}
-
-.card-service {
-  position: relative;
-  background-color: #fff;
-  border-radius: 20px;
-  min-height: 200px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  padding: 1.8rem 1.7rem 2.1rem;
-  box-sizing: border-box;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 1.2rem;
-}
-
-.service-heading {
-  display: flex;
-  align-items: center;
-  gap: 0.95rem;
-}
-
-.service-icon {
-  width: 42px;
-  height: 32px;
-  border: 3px solid var(--highlights);
-  border-radius: 4px;
-  color: var(--highlights);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-}
-
-.service-icon svg {
-  width: 20px;
-  height: 20px;
-}
-
-.card-service h3 {
-  margin: 0;
-  color: #363636;
-  font-weight: 500;
-  font-size: 1.3rem;
-  line-height: 1.2;
-  font-family: var(--font-primary);
-}
-
-.card-service p {
-  margin: 0;
-  color: #444;
-  text-align: center;
-  font-size: 1rem;
-  line-height: 1.35;
-  padding: 0 0.35rem;
-}
-
-.service-bottom-line {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 7px;
-  background-color: var(--highlights);
-}
-
-@media (max-width: 1080px) {
-  .section-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .info-service {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (max-width: 700px) {
-  .section-cards {
-    grid-template-columns: 1fr;
-    gap: 1.2rem;
-    padding: 0 1rem;
-  }
-
-  .card-service {
-    min-height: 210px;
-  }
-}
-
-.questions {
-  background-color: #e7e7e7;
-  margin: 0;
-  padding: 4rem;
-}
-
-.container-title-questions {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.container-information {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  padding: 3rem;
-  gap: 2rem;
-}
-
-.container-questions {
-  width: 600px;
-  display: flex;
-  gap: 1.5rem;
-  flex-direction: column;
-}
-
-.container-information-image {
-  display: flex;
-  gap: 3rem;
-  flex-direction: column;
-}
-
-.more-questions {
-  background-color: var(--color-gray);
-  width: 100%;
-  height: 15rem;
-  border-radius: 30px;
-  padding: 1.5rem 1.8rem;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.3rem;
-}
-
-.more-questions-top {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.more-questions-icon {
-  width: 54px;
-  height: 40px;
-  border-radius: 20px;
-  background-color: var(--highlights);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  flex-shrink: 0;
-}
-
-.more-questions-icon::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 14px;
-  border-width: 8px 6px 0 6px;
-  border-style: solid;
-  border-color: var(--highlights) transparent transparent transparent;
-}
-
-.more-questions-icon span {
-  color: var(--color-gray);
-  font-size: 1.8rem;
-  font-weight: 700;
-  line-height: 1;
-  transform: translateY(-2px);
-}
-
-.more-questions-title {
-  font-family: var(--font-secondary);
-  color: #fff;
-  font-weight: 500;
-  margin: 0;
-  max-width: 230px;
-  font-size: 1.3rem;
-  line-height: 1.15;
-}
-
-.more-questions-text {
-  color: #ffffffd7;
-  margin: 0;
-  font-size: 1rem;
-  line-height: 1.4;
-  max-width: 330px;
-}
-
-.more-questions-button {
-  align-self: center;
-  border: 0;
-  background-color: var(--highlights);
-  color: #fff;
-  font-weight: 700;
-  text-decoration: none;
-  font-size: 1rem;
-  padding: 0.9rem 1.9rem;
-  border-radius: 16px;
-  transition: filter 0.2s ease;
-}
-
-.more-questions-button:hover {
-  filter: brightness(0.95);
-}
-
-.accordion-header {
-  background-color: #fff;
-  border: none;
-  width: 100%;
-  padding: 1.2rem;
-  border-radius: 30px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  transition: background-color 0.25s ease, color 0.25s ease;
-}
-
-.accordion-header.is-open {
-  background-color: var(--color-gray);
-  border-radius: 30px 30px 0 0;
-  border: 1px solid var(--color-gray);
-}
-
-.accordion-header.is-open .accordion-title,
-.accordion-header.is-open .accordion-icon {
-  color: #fff;
-}
-
-.accordion-title {
-  font-size: 1.1rem;
-  color: #000;
-  font-weight: 500;
-  margin: 0;
-}
-
-.accordion-icon {
-  width: 10px;
-  height: 10px;
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  color: #000;
-  transform: rotate(45deg);
-  transition: transform 0.3s ease, color 0.25s ease;
-}
-
-.accordion-icon.is-open {
-  transform: rotate(-135deg);
-}
-
-.accordion-content {
-  background-color: var(--color-gray);
-  border-radius: 0 0 30px 30px;
-  padding: 1rem 1.2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.accordion-answer {
-  font-size: 1rem;
-  color: #ffffff;
-  margin: 0;
-}
-
-.accordion-enter-active,
-.accordion-leave-active {
-  transition: max-height 0.28s ease, opacity 0.22s ease, padding 0.28s ease;
-  overflow: hidden;
-}
-
-.accordion-enter-from,
-.accordion-leave-to {
-  max-height: 0;
-  opacity: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-.accordion-enter-to,
-.accordion-leave-from {
-  max-height: 280px;
-  opacity: 1;
-}
-
-/* Estilização da Hero */
+/* Estilização da seção banner */
 
 .content {
   font-family: var(--font-primary);
@@ -790,12 +480,136 @@ const isFaqExpanded = (id) => expandedFaqId.value === id
   font-size: 2rem;
   font-weight: bold;
   color: white;
-  line-height: 1.2;
+  line-height: 1.8  ;
+  font-family: var(--font-secondary);
 }
 
 .stat-label {
   font-size: 0.85rem;
   color: white;
+}
+
+/* Estilização da seção de serviços */
+
+.services {
+  background-color: #ffffff;
+  display: flex;
+  justify-content: center;
+  padding: 5rem 0 4rem 0;
+}
+
+.section-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  width: min(100%, 1200px);
+  padding: 0 2.5rem;
+}
+
+.info-service {
+  padding: 0.1rem 0rem;
+}
+
+.info-service p {
+  max-width: 320px;
+  margin-top: 1rem;
+  font-size: 1.1rem;
+  color: #4b4b4b;
+  font-family: var(--font-primary);
+  line-height: 1.35;
+}
+
+.card-service {
+  position: relative;
+  background-color: #fff;
+  border-radius: 20px;
+  min-height: 200px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  padding: 1.8rem 1.7rem 2.1rem;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 1.2rem;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card-service:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--highlights) 38%, transparent);
+}
+
+.service-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.95rem;
+}
+
+.service-icon {
+  width: 42px;
+  height: 32px;
+  border: 3px solid var(--highlights);
+  border-radius: 4px;
+  color: var(--highlights);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.service-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.card-service h3 {
+  margin: 0;
+  color: #363636;
+  font-weight: 500;
+  font-size: 1.3rem;
+  line-height: 1.2;
+  font-family: var(--font-primary);
+}
+
+.card-service p {
+  margin: 0;
+  color: #444;
+  text-align: center;
+  font-size: 1rem;
+  line-height: 1.35;
+  padding: 0 0.35rem;
+}
+
+.service-bottom-line {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 7px;
+  background-color: var(--highlights);
+}
+
+@media (max-width: 1080px) {
+  .section-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .info-service {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 700px) {
+  .section-cards {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+    padding: 0 1rem;
+  }
+
+  .card-service {
+    min-height: 210px;
+  }
 }
 
 /* Estilização da seção de depoimentos */
@@ -993,5 +807,204 @@ const isFaqExpanded = (id) => expandedFaqId.value === id
   .carousel-button {
     display: none;
   }
+}
+
+/* Estilização da seção de perguntas frequentes */
+
+.questions {
+  background-color: #e7e7e7;
+  margin: 0;
+  padding: 4rem;
+}
+
+.container-title-questions {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.container-information {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  padding: 3rem;
+  gap: 2rem;
+}
+
+.container-questions {
+  width: 600px;
+  display: flex;
+  gap: 1.5rem;
+  flex-direction: column;
+}
+
+.container-information-image {
+  display: flex;
+  gap: 3rem;
+  flex-direction: column;
+}
+
+.more-questions {
+  background-color: var(--color-gray);
+  width: 100%;
+  height: 15rem;
+  border-radius: 30px;
+  padding: 1.5rem 1.8rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.3rem;
+}
+
+.more-questions-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.more-questions-icon {
+  width: 54px;
+  height: 40px;
+  border-radius: 20px;
+  background-color: var(--highlights);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.more-questions-icon::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 14px;
+  border-width: 8px 6px 0 6px;
+  border-style: solid;
+  border-color: var(--highlights) transparent transparent transparent;
+}
+
+.more-questions-icon span {
+  color: var(--color-gray);
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+  transform: translateY(-2px);
+}
+
+.more-questions-title {
+  font-family: var(--font-secondary);
+  color: #fff;
+  font-weight: 500;
+  margin: 0;
+  max-width: 230px;
+  font-size: 1.3rem;
+  line-height: 1.15;
+}
+
+.more-questions-text {
+  color: #ffffffd7;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.4;
+  max-width: 330px;
+}
+
+.more-questions-button {
+  align-self: center;
+  border: 0;
+  background-color: var(--highlights);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 1rem;
+  padding: 0.9rem 1.9rem;
+  border-radius: 16px;
+  transition: filter 0.2s ease;
+}
+
+.more-questions-button:hover {
+  filter: brightness(0.95);
+}
+
+.accordion-header {
+  background-color: #fff;
+  border: none;
+  width: 100%;
+  padding: 1.2rem;
+  border-radius: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.accordion-header.is-open {
+  background-color: var(--color-gray);
+  border-radius: 30px 30px 0 0;
+  border: 1px solid var(--color-gray);
+}
+
+.accordion-header.is-open .accordion-title,
+.accordion-header.is-open .accordion-icon {
+  color: #fff;
+}
+
+.accordion-title {
+  font-size: 1.1rem;
+  color: #000;
+  font-weight: 500;
+  margin: 0;
+}
+
+.accordion-icon {
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  color: #000;
+  transform: rotate(45deg);
+  transition: transform 0.3s ease, color 0.25s ease;
+}
+
+.accordion-icon.is-open {
+  transform: rotate(-135deg);
+}
+
+.accordion-content {
+  background-color: var(--color-gray);
+  border-radius: 0 0 30px 30px;
+  padding: 1rem 1.2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.accordion-answer {
+  font-size: 1rem;
+  color: #ffffff;
+  margin: 0;
+}
+
+.accordion-enter-active,
+.accordion-leave-active {
+  transition: max-height 0.28s ease, opacity 0.22s ease, padding 0.28s ease;
+  overflow: hidden;
+}
+
+.accordion-enter-from,
+.accordion-leave-to {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.accordion-enter-to,
+.accordion-leave-from {
+  max-height: 280px;
+  opacity: 1;
 }
 </style>
