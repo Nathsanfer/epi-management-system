@@ -350,7 +350,6 @@ const isFaqExpanded = (id) => expandedFaqId.value === id
   </main>
 
   <Footer />
-
 </template>
 
 <style scoped>
