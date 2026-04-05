@@ -7,7 +7,7 @@ import Login from '../views/Login.vue'
 import Cadastro from '../views/Cadastro.vue'
 import Contato from '../views/Contato.vue'
 import NotFound from '../views/NotFound.vue'
-import Dashboard from '../views/Dashboard.vue'
+import Dashboard from '../views/protected/Dashboard.vue'
 
 const routes = [
     { path: '/', component: Home },
