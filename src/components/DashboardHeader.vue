@@ -71,6 +71,7 @@ watch(session, carregarDadosUsuario, { immediate: true });
     align-items: center;
     gap: 1rem;
     padding: 1rem;
+    background-color: #f9f9f9;
 }
 
 .icon {
