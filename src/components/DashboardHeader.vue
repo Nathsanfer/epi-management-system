@@ -1,44 +1,43 @@
 <script setup>
-// Importa as dependências necessárias
-// Watch: observa mudanças reativas e executa ação
 import { computed, ref, watch } from "vue";
 import { useSupabase } from "../composables/useSupabase";
 
-// Obtém a instância do Supabase e a sessão atual
-const { supabase, session } = useSupabase();
+// Supabase
+const { supabase, session, loadingSession } = useSupabase();
 
-// Variáveis reativas para armazenar o nome completo e função do usuário
+// Estados
 const nomeCompleto = ref("");
 const funcao = ref("");
 
-// Função para carregar os dados do usuário a partir do banco de dados
+// Buscar dados do usuário
 const carregarDadosUsuario = async () => {
-    // Obtém o ID do usuário autenticado a partir da sessão
     const userId = session.value?.user?.id;
 
-    // Se não houver um usuário autenticado, não busca dados
+    console.log("USER ID:", userId);
+    console.log(userId)
+
     if (!userId) return;
 
-    // Consulta a tabela "usuario" para obter o nome completo e função do usuário
     const { data, error } = await supabase
-        .from("usuario")
+        .from("usuario") // ✅ nome correto
         .select("nome_completo, funcao")
-        .eq("id", userId)
+        .eq("id", userId) // ✅ correto
         .maybeSingle();
 
+    console.log("DATA:", data);
+
     if (error) {
-        console.error("Erro ao buscar dados do usuário:", error);
+        console.error("Erro ao buscar usuário:", error);
         return;
     }
 
-    // Atualiza as variáveis reativas com os dados obtidos, usando valores padrão se necessário
     nomeCompleto.value = data?.nome_completo ?? "Usuário";
     funcao.value = data?.funcao ?? "";
 };
 
-// Gera uma mensagem personalizada com base na função do usuário
+// Mensagem dinâmica
 const mensagemPorFuncao = computed(() => {
-    const cargo = funcao.value.toLowerCase();
+    const cargo = funcao.value?.toLowerCase() || "";
 
     if (cargo.includes("administrador")) {
         return "Novos registros e relatórios te aguardam.";
@@ -51,8 +50,17 @@ const mensagemPorFuncao = computed(() => {
     return "Bem-vindo ao sistema de gestão de EPI.";
 });
 
-// Observa mudanças na sessão e carrega os dados do usuário imediatamente 
-watch(session, carregarDadosUsuario, { immediate: true });
+watch(
+    () => loadingSession.value,
+    (loading) => {
+        console.log("LOADING:", loading);
+
+        if (!loading && session.value?.user) {
+            carregarDadosUsuario();
+        }
+    },
+    { immediate: true }
+);
 </script>
 
 <template>

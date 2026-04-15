@@ -5,8 +5,19 @@
   --highlights: #f6821f;
   --highlights-hover: hsl(28, 100%, 62%);
   --color-gray: #3d3c3a;
+  --color-background: #ffffff;
+  --color-text: #3d3c3a;
   --font-primary: 'Istok Web', sans-serif;
   --font-secondary: 'Kaisei HarunoUmi', serif;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  min-height: 100vh;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body {
