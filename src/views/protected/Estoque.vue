@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -19,8 +19,6 @@ const carregarEquipamentos = async () => {
     return;
   }
 
-  console.log("DADOS:", data);
-
   equipamentos.value = data;
 };
 
@@ -28,7 +26,9 @@ onMounted(() => {
   carregarEquipamentos();
 });
 
+// ---------------- MODAL ----------------
 const modalRegister = ref(false);
+const inputImagemRef = ref(null);
 
 function openRegisterModal() {
   modalRegister.value = true;
@@ -36,6 +36,166 @@ function openRegisterModal() {
 
 function closeRegisterModal() {
   modalRegister.value = false;
+
+  if (previewImagem.value) {
+    URL.revokeObjectURL(previewImagem.value);
+    previewImagem.value = null;
+  }
+
+  imagemSelecionada.value = null;
+
+  if (inputImagemRef.value) {
+    inputImagemRef.value.value = "";
+  }
+}
+
+// ---------------- IMAGEM ----------------
+const imagemSelecionada = ref(null);
+const previewImagem = ref(null);
+
+function abrirSeletorImagem() {
+  inputImagemRef.value?.click();
+}
+
+function selecionarImagem(event) {
+  const arquivo = event.target.files?.[0];
+  if (!arquivo) return;
+
+  imagemSelecionada.value = arquivo;
+
+  if (previewImagem.value) {
+    URL.revokeObjectURL(previewImagem.value);
+  }
+
+  previewImagem.value = URL.createObjectURL(arquivo);
+}
+
+onBeforeUnmount(() => {
+  if (previewImagem.value) {
+    URL.revokeObjectURL(previewImagem.value);
+  }
+});
+
+// ---------------- FORM ----------------
+const nomeEquipamento = ref("");
+const validade = ref("");
+const certificado = ref("");
+const tamanho = ref("");
+const quantidadeMinima = ref("");
+const quantidadeEstoque = ref("");
+const classificacao = ref("");
+const descricao = ref("");
+
+const salvandoCadastro = ref(false);
+const erroCadastro = ref("");
+const sucessoCadastro = ref("");
+
+// 🟡 fallback
+const IMAGEM_PADRAO = "https://via.placeholder.com/150?text=Equipamento";
+
+// ---------------- CADASTRO ----------------
+async function cadastrarEquipamento() {
+  erroCadastro.value = "";
+  sucessoCadastro.value = "";
+
+  if (!nomeEquipamento.value.trim()) {
+    erroCadastro.value = "Informe o nome do equipamento.";
+    return;
+  }
+
+  salvandoCadastro.value = true;
+  let imagemUrl = IMAGEM_PADRAO;
+
+  // 🚀 UPLOAD CORRIGIDO
+  if (imagemSelecionada.value) {
+    const arquivo = imagemSelecionada.value;
+
+    // nome seguro (evita problema com espaço)
+    const nomeArquivo = `${Date.now()}-${arquivo.name.replace(/\s/g, "_")}`;
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("equipamentos")
+      .upload(nomeArquivo, arquivo, {
+        cacheControl: "3600",
+        upsert: true,
+      });
+
+    console.log("UPLOAD DATA:", uploadData);
+    console.log("UPLOAD ERROR:", uploadError);
+
+    if (!uploadError) {
+      const { data } = supabase.storage
+        .from("equipamentos")
+        .getPublicUrl(nomeArquivo);
+
+      imagemUrl = data.publicUrl;
+
+      console.log("URL GERADA:", imagemUrl);
+    } else {
+      console.error("Erro upload:", uploadError);
+    }
+  }
+
+  // ---------------- INSERT EQUIPAMENTO ----------------
+  const payload = {
+    nome: nomeEquipamento.value,
+    descricao: descricao.value,
+    tamanho: tamanho.value,
+    classificacao: classificacao.value,
+    validade_certificado: validade.value,
+    certificado_aprovacao: certificado.value,
+    imagem: imagemUrl,
+    quantidade_minima: Number(quantidadeMinima.value) || 0,
+  };
+
+  console.log("PAYLOAD:", payload);
+
+  const { data: equipamentoCriado, error: equipamentoError } =
+    await supabase
+      .from("equipamento")
+      .insert([payload])
+      .select("id")
+      .single();
+
+  if (equipamentoError) {
+    console.error("Erro equipamento:", equipamentoError);
+    erroCadastro.value = equipamentoError.message;
+    salvandoCadastro.value = false;
+    return;
+  }
+
+  // ---------------- INSERT ESTOQUE ----------------
+  const { error: estoqueError } = await supabase
+    .from("estoque")
+    .insert([
+      {
+        id_equipamento: equipamentoCriado.id,
+        quantidade: Number(quantidadeEstoque.value) || 0,
+      },
+    ]);
+
+  if (estoqueError) {
+    console.error("Erro estoque:", estoqueError);
+    erroCadastro.value = "Equipamento cadastrado, mas erro no estoque.";
+    salvandoCadastro.value = false;
+    return;
+  }
+
+  // ---------------- RESET ----------------
+  nomeEquipamento.value = "";
+  validade.value = "";
+  certificado.value = "";
+  tamanho.value = "";
+  quantidadeMinima.value = "";
+  quantidadeEstoque.value = "";
+  classificacao.value = "";
+  descricao.value = "";
+
+  sucessoCadastro.value = "Equipamento cadastrado com sucesso!";
+  salvandoCadastro.value = false;
+
+  closeRegisterModal();
+  await carregarEquipamentos();
 }
 </script>
 
@@ -61,7 +221,9 @@ function closeRegisterModal() {
             <div class="divider"></div>
             <div class="info_quantity">
               <p class="label">Quantidade:</p>
-              <p class="info">{{ item.estoque[0]?.quantidade || 0 }}</p>
+              <p class="info">
+                {{ item.estoque?.length ? item.estoque[0].quantidade : 0 }}
+              </p>
             </div>
             <div class="divider"></div>
             <div class="info_size">
@@ -99,67 +261,84 @@ function closeRegisterModal() {
         <div class="modal_inputs">
           <h2 class="modal_title">Cadastro de Novo Equipamento</h2>
           <div class="container_input1">
-            <label for="nome-equipamento" class="label">Nome do Equipamento</label>
+            <label for="nome-equipamento" class="label"
+              >Nome do Equipamento</label
+            >
             <input
               type="text"
               id="nome-equipamento"
               class="input"
               placeholder="Nome do Equipamento"
+              v-model="nomeEquipamento"
             />
           </div>
           <div class="container_input2">
             <div class="container_input1">
               <label for="validade" class="label">Validade</label>
-              <input 
-              type="date"
-              class="input"
-              id="validade"
+              <input
+                type="date"
+                class="input"
+                id="validade"
+                v-model="validade"
               />
             </div>
             <div class="container_input1">
               <label for="certificado" class="label">Certificado</label>
-              <input 
-              type="text"
-              class="input"
-              id="certificado"
-              placeholder="Certificade de Aprovação"
+              <input
+                type="text"
+                class="input"
+                id="certificado"
+                placeholder="Certificade de Aprovação"
+                v-model="certificado"
               />
             </div>
             <div class="container_input1">
               <label for="tamanho" class="label">Tamanho</label>
-              <input 
-              type="text"
-              class="input"
-              id="tamanho"
-              placeholder="Tamanho"
+              <input
+                type="text"
+                class="input"
+                id="tamanho"
+                placeholder="Tamanho"
+                v-model="tamanho"
               />
             </div>
           </div>
           <div class="container_input2">
             <div class="container_input1">
-              <label for="quantidade_minima" class="label">Quantidade Mínima</label>
-              <input 
-              type="text"
-              class="input"
-              id="quantidade_minima"
-              placeholder="Quantidade Mínima"
+              <label for="quantidade_minima" class="label"
+                >Quantidade Mínima</label
+              >
+              <input
+                type="text"
+                class="input"
+                id="quantidade_minima"
+                placeholder="Quantidade Mínima"
+                v-model="quantidadeMinima"
               />
             </div>
             <div class="container_input1">
-              <label for="quantidade_estoque" class="label">Quantidade em Estoque</label>
-              <input 
-              type="text"
-              class="input"
-              id="quantidade_estoque"
-              placeholder="Quantidade em Estoque"
+              <label for="quantidade_estoque" class="label"
+                >Quantidade em Estoque</label
+              >
+              <input
+                type="text"
+                class="input"
+                id="quantidade_estoque"
+                placeholder="Quantidade em Estoque"
+                v-model="quantidadeEstoque"
               />
             </div>
           </div>
           <div class="container_input1">
             <label for="classificacao" class="label">Classificação</label>
-            <select name="classificacao" id="classificacao" class="select">
-              <option value="classe-1">Reutilizável</option>
-              <option value="classe-2">Descartável</option>
+            <select
+              name="classificacao"
+              id="classificacao"
+              class="select"
+              v-model="classificacao"
+            >
+              <option value="reutilizavel">Reutilizável</option>
+              <option value="descartavel">Descartável</option>
             </select>
           </div>
           <div class="container_input1">
@@ -170,14 +349,49 @@ function closeRegisterModal() {
               id="descricao-equipamento"
               class="input"
               placeholder="Descrição do Equipamento"
-            />  
+              v-model="descricao"
+            />
           </div>
         </div>
         <div class="modal_image_button">
-          <div class="modal_image">
-
-          </div>
-          <button class="modal_btn">Cadastrar Equipamento</button>
+          <button class="modal_image" type="button" @click="abrirSeletorImagem">
+            <img
+              v-if="previewImagem"
+              :src="previewImagem"
+              alt="Pré-visualização da imagem selecionada"
+              class="modal_image_preview"
+            />
+            <span v-else class="modal_image_placeholder">
+              Clique para selecionar uma imagem
+            </span>
+          </button>
+          <input
+            ref="inputImagemRef"
+            type="file"
+            accept="image/*"
+            class="input_file_hidden"
+            @change="selecionarImagem"
+          />
+          <button
+            class="modal_btn"
+            type="button"
+            :disabled="salvandoCadastro"
+            @click="cadastrarEquipamento"
+          >
+            {{ salvandoCadastro ? "Cadastrando..." : "Cadastrar Equipamento" }}
+          </button>
+          <p
+            v-if="erroCadastro"
+            class="cadastro_feedback cadastro_feedback--erro"
+          >
+            {{ erroCadastro }}
+          </p>
+          <p
+            v-if="sucessoCadastro"
+            class="cadastro_feedback cadastro_feedback--sucesso"
+          >
+            {{ sucessoCadastro }}
+          </p>
         </div>
       </div>
     </div>
@@ -227,6 +441,7 @@ function closeRegisterModal() {
   display: flex;
   justify-content: space-between;
   flex-direction: column;
+  gap: 1rem;
 }
 
 .container_input1 {
@@ -267,6 +482,31 @@ function closeRegisterModal() {
   height: 200px;
   background-color: #d9d9d9;
   border-radius: 10px;
+  border: none;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal_image_preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.modal_image_placeholder {
+  color: #666;
+  font-size: 0.95rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+.input_file_hidden {
+  display: none;
 }
 
 .modal_btn {
@@ -280,6 +520,23 @@ function closeRegisterModal() {
   cursor: pointer;
 }
 
+.modal_btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.cadastro_feedback {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.cadastro_feedback--erro {
+  color: #c0392b;
+}
+
+.cadastro_feedback--sucesso {
+  color: #2e7d32;
+}
 
 .btn {
   width: 98%;
