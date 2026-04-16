@@ -8,6 +8,23 @@ const supabase = createClient(
 );
 
 const equipamentos = ref([]);
+const menuAbertoId = ref(null);
+
+const modalEdit = ref(false);
+const equipamentoEditandoId = ref(null);
+
+const editNomeEquipamento = ref("");
+const editValidade = ref("");
+const editCertificado = ref("");
+const editTamanho = ref("");
+const editQuantidadeMinima = ref("");
+const editQuantidadeEstoque = ref("");
+const editClassificacao = ref("");
+const editDescricao = ref("");
+
+const salvandoEdicao = ref(false);
+const erroEdicao = ref("");
+const sucessoEdicao = ref("");
 
 const carregarEquipamentos = async () => {
   const { data, error } = await supabase
@@ -24,7 +41,7 @@ const carregarEquipamentos = async () => {
 
 onMounted(() => {
   carregarEquipamentos();
-});
+}); 
 
 // ---------------- MODAL ----------------
 const modalRegister = ref(false);
@@ -47,6 +64,157 @@ function closeRegisterModal() {
   if (inputImagemRef.value) {
     inputImagemRef.value.value = "";
   }
+}
+
+function toggleMenuOpcoes(id) {
+  menuAbertoId.value = menuAbertoId.value === id ? null : id;
+}
+
+function fecharMenuOpcoes() {
+  menuAbertoId.value = null;
+}
+
+function normalizarClassificacao(valor) {
+  if (!valor) return "";
+
+  const texto = String(valor).trim().toLowerCase();
+  if (!texto) return "";
+
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+function abrirModalEdicao(item) {
+  equipamentoEditandoId.value = item.id;
+  editNomeEquipamento.value = item.nome ?? "";
+  editValidade.value = item.validade_certificado ?? "";
+  editCertificado.value = item.certificado_aprovacao ?? "";
+  editTamanho.value = item.tamanho ?? "";
+  editQuantidadeMinima.value = item.quantidade_minima ?? "";
+  editQuantidadeEstoque.value = item.estoque?.[0]?.quantidade ?? "";
+  editClassificacao.value = normalizarClassificacao(item.classificacao);
+  editDescricao.value = item.descricao ?? "";
+
+  erroEdicao.value = "";
+  sucessoEdicao.value = "";
+  modalEdit.value = true;
+  fecharMenuOpcoes();
+}
+
+function fecharModalEdicao() {
+  modalEdit.value = false;
+  equipamentoEditandoId.value = null;
+  erroEdicao.value = "";
+  sucessoEdicao.value = "";
+}
+
+async function salvarEdicaoEquipamento() {
+  erroEdicao.value = "";
+  sucessoEdicao.value = "";
+
+  if (!equipamentoEditandoId.value) {
+    erroEdicao.value = "Equipamento inválido para edição.";
+    return;
+  }
+
+  if (!editNomeEquipamento.value.trim()) {
+    erroEdicao.value = "Informe o nome do equipamento.";
+    return;
+  }
+
+  salvandoEdicao.value = true;
+
+  const { error: equipamentoError } = await supabase
+    .from("equipamento")
+    .update({
+      nome: editNomeEquipamento.value,
+      descricao: editDescricao.value,
+      tamanho: editTamanho.value,
+      classificacao: normalizarClassificacao(editClassificacao.value),
+      validade_certificado: editValidade.value,
+      certificado_aprovacao: editCertificado.value,
+      quantidade_minima: Number(editQuantidadeMinima.value) || 0,
+    })
+    .eq("id", equipamentoEditandoId.value);
+
+  if (equipamentoError) {
+    erroEdicao.value = equipamentoError.message;
+    salvandoEdicao.value = false;
+    return;
+  }
+
+  const { data: estoqueRegistro, error: buscaEstoqueError } = await supabase
+    .from("estoque")
+    .select("id")
+    .eq("id_equipamento", equipamentoEditandoId.value)
+    .maybeSingle();
+
+  if (buscaEstoqueError) {
+    erroEdicao.value = buscaEstoqueError.message;
+    salvandoEdicao.value = false;
+    return;
+  }
+
+  const quantidade = Number(editQuantidadeEstoque.value) || 0;
+  let estoqueError = null;
+
+  if (estoqueRegistro?.id) {
+    const { error } = await supabase
+      .from("estoque")
+      .update({ quantidade })
+      .eq("id", estoqueRegistro.id);
+    estoqueError = error;
+  } else {
+    const { error } = await supabase.from("estoque").insert([
+      {
+        id_equipamento: equipamentoEditandoId.value,
+        quantidade,
+      },
+    ]);
+    estoqueError = error;
+  }
+
+  if (estoqueError) {
+    erroEdicao.value = estoqueError.message;
+    salvandoEdicao.value = false;
+    return;
+  }
+
+  sucessoEdicao.value = "Equipamento atualizado com sucesso!";
+  salvandoEdicao.value = false;
+  await carregarEquipamentos();
+  fecharModalEdicao();
+}
+
+async function deletarEquipamento(item) {
+  fecharMenuOpcoes();
+
+  const confirmado = window.confirm(
+    `Tem certeza que deseja deletar o equipamento "${item.nome}"?`,
+  );
+
+  if (!confirmado) return;
+
+  const { error: estoqueError } = await supabase
+    .from("estoque")
+    .delete()
+    .eq("id_equipamento", item.id);
+
+  if (estoqueError) {
+    window.alert(`Erro ao deletar estoque: ${estoqueError.message}`);
+    return;
+  }
+
+  const { error: equipamentoError } = await supabase
+    .from("equipamento")
+    .delete()
+    .eq("id", item.id);
+
+  if (equipamentoError) {
+    window.alert(`Erro ao deletar equipamento: ${equipamentoError.message}`);
+    return;
+  }
+
+  await carregarEquipamentos();
 }
 
 // ---------------- IMAGEM ----------------
@@ -141,7 +309,7 @@ async function cadastrarEquipamento() {
     nome: nomeEquipamento.value,
     descricao: descricao.value,
     tamanho: tamanho.value,
-    classificacao: classificacao.value,
+    classificacao: normalizarClassificacao(classificacao.value),
     validade_certificado: validade.value,
     certificado_aprovacao: certificado.value,
     imagem: imagemUrl,
@@ -200,7 +368,7 @@ async function cadastrarEquipamento() {
 </script>
 
 <template>
-  <main class="page">
+  <main class="page" @click="fecharMenuOpcoes">
     <button class="btn" @click="openRegisterModal">
       + Clique para Adicionar Novo Equipamento no Estoque
     </button>
@@ -233,20 +401,43 @@ async function cadastrarEquipamento() {
             <div class="divider"></div>
             <div class="info_classification">
               <p class="label">Classificação:</p>
-              <p class="info">{{ item.classificacao }}</p>
+              <p class="info">{{ normalizarClassificacao(item.classificacao) }}</p>
             </div>
             <div class="divider"></div>
             <div class="info_validity">
               <p class="label">Validade:</p>
               <p class="info">{{ item.validade_certificado }}</p>
             </div>
-            <button
-              class="more-options-btn"
-              type="button"
-              aria-label="Mostrar opções extras"
-            >
-              &#8942;
-            </button>
+            <div class="more-options-wrapper">
+              <button
+                class="more-options-btn"
+                type="button"
+                aria-label="Mostrar opções extras"
+                @click.stop="toggleMenuOpcoes(item.id)"
+              >
+                &#8942;
+              </button>
+              <div
+                v-if="menuAbertoId === item.id"
+                class="options-menu"
+                @click.stop
+              >
+                <button
+                  class="options-menu-btn"
+                  type="button"
+                  @click="abrirModalEdicao(item)"
+                >
+                  Editar equipamento
+                </button>
+                <button
+                  class="options-menu-btn options-menu-btn--delete"
+                  type="button"
+                  @click="deletarEquipamento(item)"
+                >
+                  Deletar equipamento
+                </button>
+              </div>
+            </div>
           </div>
         </li>
       </ul>
@@ -337,8 +528,8 @@ async function cadastrarEquipamento() {
               class="select"
               v-model="classificacao"
             >
-              <option value="reutilizavel">Reutilizável</option>
-              <option value="descartavel">Descartável</option>
+              <option value="Reutilizável">Reutilizável</option>
+              <option value="Descartável">Descartável</option>
             </select>
           </div>
           <div class="container_input1">
@@ -392,6 +583,136 @@ async function cadastrarEquipamento() {
           >
             {{ sucessoCadastro }}
           </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="container_modal" v-if="modalEdit" @click="fecharModalEdicao">
+      <div class="modal_content" @click.stop>
+        <div class="modal_inputs">
+          <h2 class="modal_title">Editar Equipamento</h2>
+          <div class="container_input1">
+            <label for="edit-nome-equipamento" class="label"
+              >Nome do Equipamento</label
+            >
+            <input
+              type="text"
+              id="edit-nome-equipamento"
+              class="input"
+              placeholder="Nome do Equipamento"
+              v-model="editNomeEquipamento"
+            />
+          </div>
+
+          <div class="container_input2">
+            <div class="container_input1">
+              <label for="edit-validade" class="label">Validade</label>
+              <input
+                type="date"
+                class="input"
+                id="edit-validade"
+                v-model="editValidade"
+              />
+            </div>
+            <div class="container_input1">
+              <label for="edit-certificado" class="label">Certificado</label>
+              <input
+                type="text"
+                class="input"
+                id="edit-certificado"
+                placeholder="Certificado de Aprovação"
+                v-model="editCertificado"
+              />
+            </div>
+            <div class="container_input1">
+              <label for="edit-tamanho" class="label">Tamanho</label>
+              <input
+                type="text"
+                class="input"
+                id="edit-tamanho"
+                placeholder="Tamanho"
+                v-model="editTamanho"
+              />
+            </div>
+          </div>
+
+          <div class="container_input2">
+            <div class="container_input1">
+              <label for="edit-quantidade-minima" class="label"
+                >Quantidade Mínima</label
+              >
+              <input
+                type="text"
+                class="input"
+                id="edit-quantidade-minima"
+                placeholder="Quantidade Mínima"
+                v-model="editQuantidadeMinima"
+              />
+            </div>
+            <div class="container_input1">
+              <label for="edit-quantidade-estoque" class="label"
+                >Quantidade em Estoque</label
+              >
+              <input
+                type="text"
+                class="input"
+                id="edit-quantidade-estoque"
+                placeholder="Quantidade em Estoque"
+                v-model="editQuantidadeEstoque"
+              />
+            </div>
+          </div>
+
+          <div class="container_input1">
+            <label for="edit-classificacao" class="label">Classificação</label>
+            <select
+              name="edit-classificacao"
+              id="edit-classificacao"
+              class="select"
+              v-model="editClassificacao"
+            >
+              <option value="Reutilizável">Reutilizável</option>
+              <option value="Descartável">Descartável</option>
+            </select>
+          </div>
+
+          <div class="container_input1">
+            <label for="edit-descricao-equipamento" class="label">Descrição</label>
+            <textarea
+              rows="2"
+              id="edit-descricao-equipamento"
+              class="input"
+              placeholder="Descrição do Equipamento"
+              v-model="editDescricao"
+            />
+          </div>
+
+          <p
+            v-if="erroEdicao"
+            class="cadastro_feedback cadastro_feedback--erro"
+          >
+            {{ erroEdicao }}
+          </p>
+          <p
+            v-if="sucessoEdicao"
+            class="cadastro_feedback cadastro_feedback--sucesso"
+          >
+            {{ sucessoEdicao }}
+          </p>
+        </div>
+
+        <div class="modal_image_button modal_actions">
+          <button class="modal_btn modal_btn--secondary" @click="fecharModalEdicao">
+            Cancelar
+          </button>
+          <button
+            class="modal_btn"
+            type="button"
+            :disabled="salvandoEdicao"
+            @click="salvarEdicaoEquipamento"
+          >
+            {{ salvandoEdicao ? "Salvando..." : "Salvar alterações" }}
+          </button>
         </div>
       </div>
     </div>
@@ -541,13 +862,34 @@ async function cadastrarEquipamento() {
 .btn {
   width: 98%;
   margin-left: 0.5rem;
-  padding: 0.7rem;
-  border-radius: 30px;
-  border: none;
-  background-color: #ececec;
-  color: #333;
+  padding: 0.72rem 1rem;
+  border-radius: 14px;
+  border: 1px solid #d9d9d9;
+  background: linear-gradient(180deg, #f8f8f8 0%, #eeeeee 100%);
+  color: #2f2f2f;
   font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.1px;
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.btn:hover {
+  background: linear-gradient(180deg, #fbfbfb 0%, #f2f2f2 100%);
+  border-color: #cdcdcd;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn:focus-visible {
+  outline: none;
+  border-color: #f6a15e;
+  box-shadow: 0 0 0 3px rgba(246, 130, 31, 0.18);
 }
 
 .container-scroll {
@@ -597,7 +939,7 @@ async function cadastrarEquipamento() {
   border-radius: 30px;
   width: 96%;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid #aeaeae;
 }
 
@@ -665,9 +1007,11 @@ async function cadastrarEquipamento() {
 .divider {
   flex: 0 0 1px;
   width: 1px;
+  min-width: 1px;
   align-self: stretch;
-  background-color: #000000;
+  background-color: #c7c7c7;
   margin: 0 1.5rem;
+  opacity: 1;
 }
 
 .info_quantity {
@@ -715,5 +1059,57 @@ async function cadastrarEquipamento() {
 
 .more-options-btn:hover {
   color: #222;
+}
+
+.more-options-wrapper {
+  margin-left: 2rem;
+  position: relative;
+  z-index: 6;
+}
+
+.options-menu {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 0.5rem);
+  transform: translateY(-50%);
+  min-width: 170px;
+  background: #ffffff;
+  border: 1px solid #d8d8d8;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.options-menu-btn {
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.84rem;
+  color: #333;
+  cursor: pointer;
+}
+
+.options-menu-btn:hover {
+  background: #f4f4f4;
+}
+
+.options-menu-btn--delete {
+  color: #b32d2d;
+}
+
+.options-menu-btn--delete:hover {
+  background: #fff0f0;
+}
+
+.modal_actions {
+  justify-content: flex-end;
+}
+
+.modal_btn--secondary {
+  background-color: #c9c9c9;
+  color: #333;
 }
 </style>
