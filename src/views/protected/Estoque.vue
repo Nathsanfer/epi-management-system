@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { computed, ref, onMounted, onBeforeUnmount } from "vue";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -9,6 +9,14 @@ const supabase = createClient(
 
 const equipamentos = ref([]);
 const menuAbertoId = ref(null);
+const pesquisa = ref("");
+const filtroAtivo = ref("todos");
+
+const filtros = [
+  { label: "Todos", value: "todos" },
+  { label: "Descartáveis", value: "Descartável" },
+  { label: "Reutilizáveis", value: "Reutilizável" },
+];
 
 const modalEdit = ref(false);
 const equipamentoEditandoId = ref(null);
@@ -38,6 +46,41 @@ const carregarEquipamentos = async () => {
 
   equipamentos.value = data;
 };
+
+function normalizarTexto(valor) {
+  return String(valor ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+const equipamentosFiltrados = computed(() => {
+  const termo = normalizarTexto(pesquisa.value);
+
+  return equipamentos.value.filter((item) => {
+    const classificacaoItem = normalizarClassificacao(item.classificacao);
+    const bateFiltro =
+      filtroAtivo.value === "todos" || classificacaoItem === filtroAtivo.value;
+
+    const textoBusca = normalizarTexto(
+      [
+        item.nome,
+        item.descricao,
+        item.tamanho,
+        classificacaoItem,
+        item.validade_certificado,
+        item.certificado_aprovacao,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    );
+
+    const bateBusca = !termo || textoBusca.includes(termo);
+
+    return bateFiltro && bateBusca;
+  });
+});
 
 onMounted(() => {
   carregarEquipamentos();
@@ -369,12 +412,32 @@ async function cadastrarEquipamento() {
 
 <template>
   <main class="page" @click="fecharMenuOpcoes">
-    <button class="btn" @click="openRegisterModal">
-      + Clique para Adicionar Novo Equipamento no Estoque
-    </button>
+    <div class="toolbar">
+      <button class="btn" @click="openRegisterModal">
+        Cadastrar Novo Equipamento
+      </button>
+      <input
+        v-model="pesquisa"
+        type="search"
+        placeholder="Pesquisar equipamento"
+        class="search-input"
+      />
+      <div class="filters">
+        <button
+          v-for="filtro in filtros"
+          :key="filtro.value"
+          class="filter-btn"
+          :class="{ 'filter-btn--active': filtroAtivo === filtro.value }"
+          type="button"
+          @click="filtroAtivo = filtro.value"
+        >
+          {{ filtro.label }}
+        </button>
+      </div>
+    </div>
     <div class="container-scroll">
       <ul class="list">
-        <li class="element" v-for="item in equipamentos" :key="item.id">
+        <li class="element" v-for="item in equipamentosFiltrados" :key="item.id">
           <div class="element-main">
             <img class="img" :src="item.imagem" alt="imagem do equipamento" />
             <div class="info_name">
@@ -860,30 +923,69 @@ async function cadastrarEquipamento() {
 }
 
 .btn {
+  height: 42px;
+  border: none;
+  border-radius: 30px;
+  padding: 0 1.2rem;
+  font-size: 0.95rem;
+  color: #fff;
+  background-color: #f6821f;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   width: 98%;
   margin-left: 0.5rem;
-  padding: 0.72rem 1rem;
-  border-radius: 14px;
-  border: 1px solid #d9d9d9;
-  background: linear-gradient(180deg, #f8f8f8 0%, #eeeeee 100%);
-  color: #2f2f2f;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 260px;
+  height: 42px;
+  border: 1px solid #d6d6d6;
+  border-radius: 30px;
+  padding: 0 0.9rem;
+  font-size: 0.95rem;
+  color: #333;
+  background-color: #fff;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #f6821f;
+  box-shadow: 0 0 0 2px rgba(246, 130, 31, 0.15);
+}
+
+.filters {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.filter-btn {
+  height: 42px;
+  border: 1px solid #d7d7d7;
+  border-radius: 30px;
+  padding: 0 0.9rem;
   font-size: 0.9rem;
-  font-weight: 500;
-  letter-spacing: 0.1px;
+  color: #444;
+  background-color: #f7f7f7;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: background-color 0.2s ease, border-color 0.2s ease,
-    box-shadow 0.2s ease, transform 0.15s ease;
+  transition: all 0.2s ease;
 }
 
-.btn:hover {
-  background: linear-gradient(180deg, #fbfbfb 0%, #f2f2f2 100%);
-  border-color: #cdcdcd;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+.filter-btn:hover {
+  background-color: #efefef;
 }
 
-.btn:active {
-  transform: translateY(1px);
+.filter-btn--active {
+  border-color: #f6821f;
+  background-color: #fff3e8;
+  color: #b45b10;
+  font-weight: 600;
 }
 
 .btn:focus-visible {

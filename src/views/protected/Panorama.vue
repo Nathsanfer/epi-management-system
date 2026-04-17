@@ -223,10 +223,6 @@ const itensFiltrados = computed(() => {
 </template>
 
 <style scoped>
-.page {
-  padding: 1.2rem 0.6rem 0.8rem;
-}
-
 .toolbar {
   display: flex;
   align-items: center;
