@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Istok+Web:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Gudea:ital,wght@0,400;0,700;1,400&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Kaisei+HarunoUmi&display=swap');
 
 :root {
@@ -7,7 +7,7 @@
   --color-gray: #3d3c3a;
   --color-background: #ffffff;
   --color-text: #3d3c3a;
-  --font-primary: 'Istok Web', sans-serif;
+  --font-primary: 'Gudea', sans-serif;
   --font-secondary: 'Kaisei HarunoUmi', serif;
 }
 
@@ -22,7 +22,7 @@ body,
 
 body {
   margin: 0;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-primary);
   background-color: var(--color-background);
   color: var(--color-text);
 }

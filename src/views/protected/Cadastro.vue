@@ -1,11 +1,8 @@
 <script setup>
   import { ref, onMounted, computed } from 'vue';
-  import { createClient } from '@supabase/supabase-js';
+  import { useSupabase } from '../../composables/useSupabase';
 
-  const supabase = createClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_ANON_KEY
-  );
+  const { supabase, session } = useSupabase();
 
   const usuarios = ref([]);
 
@@ -44,17 +41,33 @@
     });
   });
 
+  const obterEmailUsuario = (item) => {
+    if (item?.id && item.id === session.value?.user?.id) {
+      return session.value?.user?.email ?? item?.email ?? 'Nao informado';
+    }
+
+    return item?.email ?? 'Nao informado';
+  };
+
   const carregarUsuarios = async () => {
+    const { data: dataComEmailAuth, error: erroComEmailAuth } = await supabase
+      .rpc('listar_usuarios_com_email');
+
+    if (!erroComEmailAuth && Array.isArray(dataComEmailAuth)) {
+      usuarios.value = dataComEmailAuth;
+      return;
+    }
+
     const { data, error } = await supabase
       .from('usuario')
       .select('*');
 
-      if(error) {
-        console.error("Erro ao carregar dados dos usuários:", error);
-        return;
-      }
+    if (error) {
+      console.error('Erro ao carregar dados dos usuários:', error);
+      return;
+    }
 
-      usuarios.value = data;
+    usuarios.value = data;
   }
 
   onMounted(() => {
@@ -105,7 +118,7 @@
               </div>
               <div class="info-row">
                 <p class="label">E-mail</p>
-                <p class="value">teste.teste@gmail.com</p>
+                <p class="value">{{ obterEmailUsuario(item) }}</p>
               </div>
               <div class="info-row">
                 <p class="label">Função</p>
