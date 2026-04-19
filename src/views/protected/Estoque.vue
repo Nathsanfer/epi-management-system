@@ -1,6 +1,8 @@
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { createClient } from "@supabase/supabase-js";
+import CadastroEquipamentoModal from "../../components/CadastroEquipamentoModal.vue";
+import EditarEquipamentoModal from "../../components/EditarEquipamentoModal.vue";
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -19,20 +21,9 @@ const filtros = [
 ];
 
 const modalEdit = ref(false);
-const equipamentoEditandoId = ref(null);
+const equipamentoEditando = ref(null);
 
-const editNomeEquipamento = ref("");
-const editValidade = ref("");
-const editCertificado = ref("");
-const editTamanho = ref("");
-const editQuantidadeMinima = ref("");
-const editQuantidadeEstoque = ref("");
-const editClassificacao = ref("");
-const editDescricao = ref("");
-
-const salvandoEdicao = ref(false);
-const erroEdicao = ref("");
-const sucessoEdicao = ref("");
+const modalRegister = ref(false);
 
 const carregarEquipamentos = async () => {
   const { data, error } = await supabase
@@ -121,13 +112,7 @@ const equipamentosFiltrados = computed(() => {
   });
 });
 
-onMounted(() => {
-  carregarEquipamentos();
-}); 
-
-// ---------------- MODAL ----------------
-const modalRegister = ref(false);
-const inputImagemRef = ref(null);
+onMounted(carregarEquipamentos);
 
 function openRegisterModal() {
   modalRegister.value = true;
@@ -135,17 +120,6 @@ function openRegisterModal() {
 
 function closeRegisterModal() {
   modalRegister.value = false;
-
-  if (previewImagem.value) {
-    URL.revokeObjectURL(previewImagem.value);
-    previewImagem.value = null;
-  }
-
-  imagemSelecionada.value = null;
-
-  if (inputImagemRef.value) {
-    inputImagemRef.value.value = "";
-  }
 }
 
 function toggleMenuOpcoes(id) {
@@ -166,105 +140,13 @@ function normalizarClassificacao(valor) {
 }
 
 function abrirModalEdicao(item) {
-  equipamentoEditandoId.value = item.id;
-  editNomeEquipamento.value = item.nome ?? "";
-  editValidade.value = item.validade_certificado ?? "";
-  editCertificado.value = item.certificado_aprovacao ?? "";
-  editTamanho.value = item.tamanho ?? "";
-  editQuantidadeMinima.value = item.quantidade_minima ?? "";
-  editQuantidadeEstoque.value = item.estoque?.[0]?.quantidade ?? "";
-  editClassificacao.value = normalizarClassificacao(item.classificacao);
-  editDescricao.value = item.descricao ?? "";
-
-  erroEdicao.value = "";
-  sucessoEdicao.value = "";
+  equipamentoEditando.value = item;
   modalEdit.value = true;
   fecharMenuOpcoes();
 }
 
 function fecharModalEdicao() {
   modalEdit.value = false;
-  equipamentoEditandoId.value = null;
-  erroEdicao.value = "";
-  sucessoEdicao.value = "";
-}
-
-async function salvarEdicaoEquipamento() {
-  erroEdicao.value = "";
-  sucessoEdicao.value = "";
-
-  if (!equipamentoEditandoId.value) {
-    erroEdicao.value = "Equipamento inválido para edição.";
-    return;
-  }
-
-  if (!editNomeEquipamento.value.trim()) {
-    erroEdicao.value = "Informe o nome do equipamento.";
-    return;
-  }
-
-  salvandoEdicao.value = true;
-
-  const { error: equipamentoError } = await supabase
-    .from("equipamento")
-    .update({
-      nome: editNomeEquipamento.value,
-      descricao: editDescricao.value,
-      tamanho: editTamanho.value,
-      classificacao: normalizarClassificacao(editClassificacao.value),
-      validade_certificado: editValidade.value,
-      certificado_aprovacao: editCertificado.value,
-      quantidade_minima: Number(editQuantidadeMinima.value) || 0,
-    })
-    .eq("id", equipamentoEditandoId.value);
-
-  if (equipamentoError) {
-    erroEdicao.value = equipamentoError.message;
-    salvandoEdicao.value = false;
-    return;
-  }
-
-  const { data: estoqueRegistro, error: buscaEstoqueError } = await supabase
-    .from("estoque")
-    .select("id")
-    .eq("id_equipamento", equipamentoEditandoId.value)
-    .maybeSingle();
-
-  if (buscaEstoqueError) {
-    erroEdicao.value = buscaEstoqueError.message;
-    salvandoEdicao.value = false;
-    return;
-  }
-
-  const quantidade = Number(editQuantidadeEstoque.value) || 0;
-  let estoqueError = null;
-
-  if (estoqueRegistro?.id) {
-    const { error } = await supabase
-      .from("estoque")
-      .update({ quantidade })
-      .eq("id", estoqueRegistro.id);
-    estoqueError = error;
-  } else {
-    const { error } = await supabase.from("estoque").insert([
-      {
-        id_equipamento: equipamentoEditandoId.value,
-        quantidade,
-      },
-    ]);
-    estoqueError = error;
-  }
-
-  if (estoqueError) {
-    erroEdicao.value = estoqueError.message;
-    salvandoEdicao.value = false;
-    return;
-  }
-
-  sucessoEdicao.value = "Equipamento atualizado com sucesso!";
-  salvandoEdicao.value = false;
-  await carregarEquipamentos();
-  fecharModalEdicao();
 }
 
 async function deletarEquipamento(item) {
@@ -296,155 +178,6 @@ async function deletarEquipamento(item) {
     return;
   }
 
-  await carregarEquipamentos();
-}
-
-// ---------------- IMAGEM ----------------
-const imagemSelecionada = ref(null);
-const previewImagem = ref(null);
-
-function abrirSeletorImagem() {
-  inputImagemRef.value?.click();
-}
-
-function selecionarImagem(event) {
-  const arquivo = event.target.files?.[0];
-  if (!arquivo) return;
-
-  imagemSelecionada.value = arquivo;
-
-  if (previewImagem.value) {
-    URL.revokeObjectURL(previewImagem.value);
-  }
-
-  previewImagem.value = URL.createObjectURL(arquivo);
-}
-
-onBeforeUnmount(() => {
-  if (previewImagem.value) {
-    URL.revokeObjectURL(previewImagem.value);
-  }
-});
-
-// ---------------- FORM ----------------
-const nomeEquipamento = ref("");
-const validade = ref("");
-const certificado = ref("");
-const tamanho = ref("");
-const quantidadeMinima = ref("");
-const quantidadeEstoque = ref("");
-const classificacao = ref("");
-const descricao = ref("");
-
-const salvandoCadastro = ref(false);
-const erroCadastro = ref("");
-const sucessoCadastro = ref("");
-
-// 🟡 fallback
-const IMAGEM_PADRAO = "https://via.placeholder.com/150?text=Equipamento";
-
-// ---------------- CADASTRO ----------------
-async function cadastrarEquipamento() {
-  erroCadastro.value = "";
-  sucessoCadastro.value = "";
-
-  if (!nomeEquipamento.value.trim()) {
-    erroCadastro.value = "Informe o nome do equipamento.";
-    return;
-  }
-
-  salvandoCadastro.value = true;
-  let imagemUrl = IMAGEM_PADRAO;
-
-  // 🚀 UPLOAD CORRIGIDO
-  if (imagemSelecionada.value) {
-    const arquivo = imagemSelecionada.value;
-
-    // nome seguro (evita problema com espaço)
-    const nomeArquivo = `${Date.now()}-${arquivo.name.replace(/\s/g, "_")}`;
-
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("equipamentos")
-      .upload(nomeArquivo, arquivo, {
-        cacheControl: "3600",
-        upsert: true,
-      });
-
-    console.log("UPLOAD DATA:", uploadData);
-    console.log("UPLOAD ERROR:", uploadError);
-
-    if (!uploadError) {
-      const { data } = supabase.storage
-        .from("equipamentos")
-        .getPublicUrl(nomeArquivo);
-
-      imagemUrl = data.publicUrl;
-
-      console.log("URL GERADA:", imagemUrl);
-    } else {
-      console.error("Erro upload:", uploadError);
-    }
-  }
-
-  // ---------------- INSERT EQUIPAMENTO ----------------
-  const payload = {
-    nome: nomeEquipamento.value,
-    descricao: descricao.value,
-    tamanho: tamanho.value,
-    classificacao: normalizarClassificacao(classificacao.value),
-    validade_certificado: validade.value,
-    certificado_aprovacao: certificado.value,
-    imagem: imagemUrl,
-    quantidade_minima: Number(quantidadeMinima.value) || 0,
-  };
-
-  console.log("PAYLOAD:", payload);
-
-  const { data: equipamentoCriado, error: equipamentoError } =
-    await supabase
-      .from("equipamento")
-      .insert([payload])
-      .select("id")
-      .single();
-
-  if (equipamentoError) {
-    console.error("Erro equipamento:", equipamentoError);
-    erroCadastro.value = equipamentoError.message;
-    salvandoCadastro.value = false;
-    return;
-  }
-
-  // ---------------- INSERT ESTOQUE ----------------
-  const { error: estoqueError } = await supabase
-    .from("estoque")
-    .insert([
-      {
-        id_equipamento: equipamentoCriado.id,
-        quantidade: Number(quantidadeEstoque.value) || 0,
-      },
-    ]);
-
-  if (estoqueError) {
-    console.error("Erro estoque:", estoqueError);
-    erroCadastro.value = "Equipamento cadastrado, mas erro no estoque.";
-    salvandoCadastro.value = false;
-    return;
-  }
-
-  // ---------------- RESET ----------------
-  nomeEquipamento.value = "";
-  validade.value = "";
-  certificado.value = "";
-  tamanho.value = "";
-  quantidadeMinima.value = "";
-  quantidadeEstoque.value = "";
-  classificacao.value = "";
-  descricao.value = "";
-
-  sucessoCadastro.value = "Equipamento cadastrado com sucesso!";
-  salvandoCadastro.value = false;
-
-  closeRegisterModal();
   await carregarEquipamentos();
 }
 </script>
@@ -550,438 +283,22 @@ async function cadastrarEquipamento() {
       </ul>
     </div>
 
-    <div
-      class="container_modal"
-      v-if="modalRegister"
-      @click="closeRegisterModal"
-    >
-      <div class="modal_content" @click.stop>
-        <div class="modal_inputs">
-          <h2 class="modal_title">Cadastro de Novo Equipamento</h2>
-          <div class="container_input1">
-            <label for="nome-equipamento" class="label"
-              >Nome do Equipamento</label
-            >
-            <input
-              type="text"
-              id="nome-equipamento"
-              class="input"
-              placeholder="Nome do Equipamento"
-              v-model="nomeEquipamento"
-            />
-          </div>
-          <div class="container_input2">
-            <div class="container_input1">
-              <label for="validade" class="label">Validade</label>
-              <input
-                type="date"
-                class="input"
-                id="validade"
-                v-model="validade"
-              />
-            </div>
-            <div class="container_input1">
-              <label for="certificado" class="label">Certificado</label>
-              <input
-                type="text"
-                class="input"
-                id="certificado"
-                placeholder="Certificade de Aprovação"
-                v-model="certificado"
-              />
-            </div>
-            <div class="container_input1">
-              <label for="tamanho" class="label">Tamanho</label>
-              <input
-                type="text"
-                class="input"
-                id="tamanho"
-                placeholder="Tamanho"
-                v-model="tamanho"
-              />
-            </div>
-          </div>
-          <div class="container_input2">
-            <div class="container_input1">
-              <label for="quantidade_minima" class="label"
-                >Quantidade Mínima</label
-              >
-              <input
-                type="text"
-                class="input"
-                id="quantidade_minima"
-                placeholder="Quantidade Mínima"
-                v-model="quantidadeMinima"
-              />
-            </div>
-            <div class="container_input1">
-              <label for="quantidade_estoque" class="label"
-                >Quantidade em Estoque</label
-              >
-              <input
-                type="text"
-                class="input"
-                id="quantidade_estoque"
-                placeholder="Quantidade em Estoque"
-                v-model="quantidadeEstoque"
-              />
-            </div>
-          </div>
-          <div class="container_input1">
-            <label for="classificacao" class="label">Classificação</label>
-            <select
-              name="classificacao"
-              id="classificacao"
-              class="select"
-              v-model="classificacao"
-            >
-              <option value="Reutilizável">Reutilizável</option>
-              <option value="Descartável">Descartável</option>
-            </select>
-          </div>
-          <div class="container_input1">
-            <label for="descricao-equipamento" class="label">Descrição</label>
-            <textarea
-              type="text"
-              rows="2"
-              id="descricao-equipamento"
-              class="input"
-              placeholder="Descrição do Equipamento"
-              v-model="descricao"
-            />
-          </div>
-        </div>
-        <div class="modal_image_button">
-          <button class="modal_image" type="button" @click="abrirSeletorImagem">
-            <img
-              v-if="previewImagem"
-              :src="previewImagem"
-              alt="Pré-visualização da imagem selecionada"
-              class="modal_image_preview"
-            />
-            <span v-else class="modal_image_placeholder">
-              Clique para selecionar uma imagem
-            </span>
-          </button>
-          <input
-            ref="inputImagemRef"
-            type="file"
-            accept="image/*"
-            class="input_file_hidden"
-            @change="selecionarImagem"
-          />
-          <button
-            class="modal_btn"
-            type="button"
-            :disabled="salvandoCadastro"
-            @click="cadastrarEquipamento"
-          >
-            {{ salvandoCadastro ? "Cadastrando..." : "Cadastrar Equipamento" }}
-          </button>
-          <p
-            v-if="erroCadastro"
-            class="cadastro_feedback cadastro_feedback--erro"
-          >
-            {{ erroCadastro }}
-          </p>
-          <p
-            v-if="sucessoCadastro"
-            class="cadastro_feedback cadastro_feedback--sucesso"
-          >
-            {{ sucessoCadastro }}
-          </p>
-        </div>
-      </div>
-    </div>
+    <CadastroEquipamentoModal
+      :open="modalRegister"
+      @close="closeRegisterModal"
+      @created="carregarEquipamentos"
+    />
 
-    <div class="container_modal" v-if="modalEdit" @click="fecharModalEdicao">
-      <div class="modal_content" @click.stop>
-        <div class="modal_inputs">
-          <h2 class="modal_title">Editar Equipamento</h2>
-          <div class="container_input1">
-            <label for="edit-nome-equipamento" class="label"
-              >Nome do Equipamento</label
-            >
-            <input
-              type="text"
-              id="edit-nome-equipamento"
-              class="input"
-              placeholder="Nome do Equipamento"
-              v-model="editNomeEquipamento"
-            />
-          </div>
-
-          <div class="container_input2">
-            <div class="container_input1">
-              <label for="edit-validade" class="label">Validade</label>
-              <input
-                type="date"
-                class="input"
-                id="edit-validade"
-                v-model="editValidade"
-              />
-            </div>
-            <div class="container_input1">
-              <label for="edit-certificado" class="label">Certificado</label>
-              <input
-                type="text"
-                class="input"
-                id="edit-certificado"
-                placeholder="Certificado de Aprovação"
-                v-model="editCertificado"
-              />
-            </div>
-            <div class="container_input1">
-              <label for="edit-tamanho" class="label">Tamanho</label>
-              <input
-                type="text"
-                class="input"
-                id="edit-tamanho"
-                placeholder="Tamanho"
-                v-model="editTamanho"
-              />
-            </div>
-          </div>
-
-          <div class="container_input2">
-            <div class="container_input1">
-              <label for="edit-quantidade-minima" class="label"
-                >Quantidade Mínima</label
-              >
-              <input
-                type="text"
-                class="input"
-                id="edit-quantidade-minima"
-                placeholder="Quantidade Mínima"
-                v-model="editQuantidadeMinima"
-              />
-            </div>
-            <div class="container_input1">
-              <label for="edit-quantidade-estoque" class="label"
-                >Quantidade em Estoque</label
-              >
-              <input
-                type="text"
-                class="input"
-                id="edit-quantidade-estoque"
-                placeholder="Quantidade em Estoque"
-                v-model="editQuantidadeEstoque"
-              />
-            </div>
-          </div>
-
-          <div class="container_input1">
-            <label for="edit-classificacao" class="label">Classificação</label>
-            <select
-              name="edit-classificacao"
-              id="edit-classificacao"
-              class="select"
-              v-model="editClassificacao"
-            >
-              <option value="Reutilizável">Reutilizável</option>
-              <option value="Descartável">Descartável</option>
-            </select>
-          </div>
-
-          <div class="container_input1">
-            <label for="edit-descricao-equipamento" class="label">Descrição</label>
-            <textarea
-              rows="2"
-              id="edit-descricao-equipamento"
-              class="input"
-              placeholder="Descrição do Equipamento"
-              v-model="editDescricao"
-            />
-          </div>
-
-          <p
-            v-if="erroEdicao"
-            class="cadastro_feedback cadastro_feedback--erro"
-          >
-            {{ erroEdicao }}
-          </p>
-          <p
-            v-if="sucessoEdicao"
-            class="cadastro_feedback cadastro_feedback--sucesso"
-          >
-            {{ sucessoEdicao }}
-          </p>
-        </div>
-
-        <div class="modal_image_button modal_actions">
-          <button class="modal_btn modal_btn--secondary" @click="fecharModalEdicao">
-            Cancelar
-          </button>
-          <button
-            class="modal_btn"
-            type="button"
-            :disabled="salvandoEdicao"
-            @click="salvarEdicaoEquipamento"
-          >
-            {{ salvandoEdicao ? "Salvando..." : "Salvar alterações" }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <EditarEquipamentoModal
+      :open="modalEdit"
+      :equipamento="equipamentoEditando"
+      @close="fecharModalEdicao"
+      @updated="carregarEquipamentos"
+    />
   </main>
 </template>
 
 <style scoped>
-.container_modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
-  padding: 1rem;
-}
-
-.modal_content {
-  width: min(920px, 96vw);
-  border-radius: 20px;
-  background: #fff;
-  border: 1px solid #ececec;
-  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.22);
-  display: grid;
-  grid-template-columns: 1.3fr 0.8fr;
-  gap: 1rem;
-  padding: 1rem;
-}
-
-.modal_title {
-  margin: 0 0 0.4rem;
-  font-size: 1.2rem;
-  color: #1f1f1f;
-}
-
-.modal_inputs {
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-}
-
-.modal_image_button {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.container_input1 {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.container_input2 {
-  display: flex;
-  width: 100%;
-  max-width: 100%;
-  gap: 0.5rem;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  box-sizing: border-box;
-}
-
-.container_input2 .container_input1 {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-.input {
-  height: 40px;
-  border: 1px solid #d6d6d6;
-  border-radius: 12px;
-  padding: 0 0.8rem;
-  font-size: 0.92rem;
-  background: #fff;
-}
-
-.select {
-  height: 40px;
-  border: 1px solid #d6d6d6;
-  border-radius: 12px;
-  padding: 0 0.8rem;
-  font-size: 0.92rem;
-  background: #fff;
-}
-
-.input:focus,
-.select:focus {
-  outline: none;
-  border-color: #f6821f;
-  box-shadow: 0 0 0 2px rgba(246, 130, 31, 0.15);
-}
-
-.modal_image {
-  width: 100%;
-  min-height: 210px;
-  border: 1px dashed #d8d8d8;
-  border-radius: 16px;
-  background: #fafafa;
-  padding: 0.6rem;
-  overflow: hidden;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal_image_preview {
-  width: 100%;
-  height: 100%;
-  max-height: 250px;
-  object-fit: cover;
-  border-radius: 12px;
-}
-
-.modal_image_placeholder {
-  color: #777;
-  font-size: 0.86rem;
-  text-align: center;
-  padding: 1rem;
-}
-
-.input_file_hidden {
-  display: none;
-}
-
-.modal_btn {
-  width: 100%;
-  height: 42px;
-  border-radius: 30px;
-  border: none;
-  background-color: #f6821f;
-  color: #fff;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.modal_btn:hover {
-  background-color: #ea7717;
-}
-
-.modal_btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.cadastro_feedback {
-  margin: 0;
-  font-size: 0.78rem;
-}
-
-.cadastro_feedback--erro {
-  color: #c0392b;
-}
-
-.cadastro_feedback--sucesso {
-  color: #2e7d32;
-}
-
 .btn {
   height: 42px;
   border: none;
@@ -1295,13 +612,4 @@ async function cadastrarEquipamento() {
   background: #e5e5e5;
 }
 
-@media (max-width: 900px) {
-  .modal_content {
-    grid-template-columns: 1fr;
-  }
-
-  .modal_image {
-    min-height: 150px;
-  }
-}
 </style>

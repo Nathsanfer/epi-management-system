@@ -1,306 +1,185 @@
 <script setup>
-  import { ref, onMounted, computed } from 'vue';
-  import { createClient } from '@supabase/supabase-js';
-  import { useSupabase } from '../../composables/useSupabase';
+import { ref, onMounted, computed } from "vue";
+import { useSupabase } from "../../composables/useSupabase";
+import CadastroUsuarioModal from "../../components/CadastroUsuarioModal.vue";
 
-  const { supabase, session } = useSupabase();
-  const authSupabase = createClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_ANON_KEY,
-    {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    }
-  );
+const { supabase, session } = useSupabase();
 
-  const usuarios = ref([]);
-  const modalRegister = ref(false);
-  const menuAbertoId = ref(null);
-  const modalEditFuncao = ref(false);
-  const usuarioEditandoId = ref(null);
-  const editFuncaoUsuario = ref('operador');
-  const salvandoEdicao = ref(false);
-  const erroEdicao = ref('');
+const usuarios = ref([]);
+const modalRegister = ref(false);
+const menuAbertoId = ref(null);
+const modalEditFuncao = ref(false);
+const usuarioEditandoId = ref(null);
+const editFuncaoUsuario = ref("operador");
+const salvandoEdicao = ref(false);
+const erroEdicao = ref("");
 
-  const nomeNovoUsuario = ref('');
-  const emailNovoUsuario = ref('');
-  const senhaNovoUsuario = ref('');
-  const funcaoNovoUsuario = ref('operador');
+const pesquisa = ref("");
+const filtroAtivo = ref("todos");
 
-  const avatarSelecionado = ref('');
+const filtros = [
+  { label: "Todos", value: "todos" },
+  { label: "Administradores", value: "administrador" },
+  { label: "Operadores", value: "operador" },
+];
 
-  const salvandoCadastro = ref(false);
-  const erroCadastro = ref('');
-  const sucessoCadastro = ref('');
+const normalizarTexto = (valor) => {
+  return String(valor ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+};
 
-  const storageBaseUrl = String(import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
+const formatarFuncao = (valor) => {
+  const texto = String(valor ?? "")
+    .trim()
+    .toLowerCase();
+  if (!texto) return "";
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+};
 
-  const avatarUrlPublica = (nomeArquivo) =>
-    `${storageBaseUrl}/storage/v1/object/public/avatares/${nomeArquivo}`;
+const usuariosFiltrados = computed(() => {
+  const termo = normalizarTexto(pesquisa.value);
 
-  const avataresDisponiveis = ref([
-    { key: 'usuario_h.jpeg', label: 'Imagem 1', src: avatarUrlPublica('usuario_h.jpeg') },
-    { key: 'usuario_m.jpeg', label: 'Imagem 2', src: avatarUrlPublica('usuario_m.jpeg') },
-  ]);
+  return usuarios.value.filter((item) => {
+    const funcao = normalizarTexto(item.funcao);
+    const bateFiltro =
+      filtroAtivo.value === "todos" || funcao === filtroAtivo.value;
 
-  const pesquisa = ref('');
-  const filtroAtivo = ref('todos');
+    const textoBusca = normalizarTexto(
+      [item.nome_completo, item.email, item.funcao].filter(Boolean).join(" "),
+    );
 
-  const filtros = [
-    { label: 'Todos', value: 'todos' },
-    { label: 'Administradores', value: 'administrador' },
-    { label: 'Operadores', value: 'operador' }
-  ]
+    const bateBusca = !termo || textoBusca.includes(termo);
 
-  const normalizarTexto = (valor) => {
-    return String(valor ?? '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .trim();
-  };
-
-  const formatarFuncao = (valor) => {
-    const texto = String(valor ?? '').trim().toLowerCase();
-    if (!texto) return '';
-    return texto.charAt(0).toUpperCase() + texto.slice(1);
-  };
-
-  const usuariosFiltrados = computed(() => {
-    const termo = normalizarTexto(pesquisa.value);
-
-    return usuarios.value.filter((item) => {
-      const funcao = normalizarTexto(item.funcao);
-      const bateFiltro =
-        filtroAtivo.value === 'todos' || funcao === filtroAtivo.value;
-
-      const textoBusca = normalizarTexto(
-        [item.nome_completo, item.email, item.funcao].filter(Boolean).join(' ')
-      );
-
-      const bateBusca = !termo || textoBusca.includes(termo);
-
-      return bateFiltro && bateBusca;
-    });
+    return bateFiltro && bateBusca;
   });
+});
 
-  const obterEmailUsuario = (item) => {
-    if (item?.id && item.id === session.value?.user?.id) {
-      return session.value?.user?.email ?? item?.email ?? 'Nao informado';
-    }
-
-    return item?.email ?? 'Nao informado';
-  };
-
-  const carregarUsuarios = async () => {
-    const { data: dataComEmailAuth, error: erroComEmailAuth } = await supabase
-      .rpc('listar_usuarios_com_email');
-
-    if (!erroComEmailAuth && Array.isArray(dataComEmailAuth)) {
-      usuarios.value = dataComEmailAuth;
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('usuario')
-      .select('*');
-
-    if (error) {
-      console.error('Erro ao carregar dados dos usuários:', error);
-      return;
-    }
-
-    usuarios.value = data;
+const obterEmailUsuario = (item) => {
+  if (item?.id && item.id === session.value?.user?.id) {
+    return session.value?.user?.email ?? item?.email ?? "Nao informado";
   }
 
-  function openRegisterModal() {
-    modalRegister.value = true;
+  return item?.email ?? "Nao informado";
+};
+
+const carregarUsuarios = async () => {
+  const { data: dataComEmailAuth, error: erroComEmailAuth } =
+    await supabase.rpc("listar_usuarios_com_email");
+
+  if (!erroComEmailAuth && Array.isArray(dataComEmailAuth)) {
+    usuarios.value = dataComEmailAuth;
+    return;
   }
 
-  function closeRegisterModal() {
-    modalRegister.value = false;
-    erroCadastro.value = '';
-    sucessoCadastro.value = '';
+  const { data, error } = await supabase.from("usuario").select("*");
 
-    nomeNovoUsuario.value = '';
-    emailNovoUsuario.value = '';
-    senhaNovoUsuario.value = '';
-    funcaoNovoUsuario.value = 'operador';
-    avatarSelecionado.value = '';
+  if (error) {
+    console.error("Erro ao carregar dados dos usuários:", error);
+    return;
   }
 
-  function selecionarAvatar(avatarKey) {
-    avatarSelecionado.value = avatarKey;
+  usuarios.value = data;
+};
+
+function openRegisterModal() {
+  modalRegister.value = true;
+}
+
+function closeRegisterModal() {
+  modalRegister.value = false;
+}
+
+function toggleMenuOpcoes(id) {
+  menuAbertoId.value = menuAbertoId.value === id ? null : id;
+}
+
+function fecharMenuOpcoes() {
+  menuAbertoId.value = null;
+}
+
+function abrirModalEditarFuncao(item) {
+  usuarioEditandoId.value = item.id;
+  editFuncaoUsuario.value =
+    normalizarTexto(item.funcao) === "administrador"
+      ? "administrador"
+      : "operador";
+  erroEdicao.value = "";
+  modalEditFuncao.value = true;
+  fecharMenuOpcoes();
+}
+
+function fecharModalEditarFuncao() {
+  modalEditFuncao.value = false;
+  usuarioEditandoId.value = null;
+  erroEdicao.value = "";
+}
+
+async function salvarEdicaoFuncao() {
+  if (!usuarioEditandoId.value) {
+    erroEdicao.value = "Usuário inválido para edição.";
+    return;
   }
 
-  function toggleMenuOpcoes(id) {
-    menuAbertoId.value = menuAbertoId.value === id ? null : id;
+  salvandoEdicao.value = true;
+
+  const { error } = await supabase
+    .from("usuario")
+    .update({
+      funcao: formatarFuncao(editFuncaoUsuario.value),
+    })
+    .eq("id", usuarioEditandoId.value);
+
+  salvandoEdicao.value = false;
+
+  if (error) {
+    erroEdicao.value = error.message;
+    return;
   }
 
-  function fecharMenuOpcoes() {
-    menuAbertoId.value = null;
+  await carregarUsuarios();
+  fecharModalEditarFuncao();
+}
+
+async function deletarUsuario(item) {
+  fecharMenuOpcoes();
+
+  if (!item?.id) return;
+
+  const confirmado = window.confirm(
+    `Tem certeza que deseja deletar o usuário "${item.nome_completo}"?`,
+  );
+  if (!confirmado) return;
+
+  const { error } = await supabase.from("usuario").delete().eq("id", item.id);
+
+  if (error) {
+    window.alert(`Erro ao deletar usuário: ${error.message}`);
+    return;
   }
 
-  function abrirModalEditarFuncao(item) {
-    usuarioEditandoId.value = item.id;
-    editFuncaoUsuario.value = normalizarTexto(item.funcao) === 'administrador' ? 'administrador' : 'operador';
-    erroEdicao.value = '';
-    modalEditFuncao.value = true;
-    fecharMenuOpcoes();
-  }
+  await carregarUsuarios();
+}
 
-  function fecharModalEditarFuncao() {
-    modalEditFuncao.value = false;
-    usuarioEditandoId.value = null;
-    erroEdicao.value = '';
-  }
-
-  async function salvarEdicaoFuncao() {
-    if (!usuarioEditandoId.value) {
-      erroEdicao.value = 'Usuário inválido para edição.';
-      return;
-    }
-
-    salvandoEdicao.value = true;
-
-    const { error } = await supabase
-      .from('usuario')
-      .update({
-        funcao: formatarFuncao(editFuncaoUsuario.value),
-      })
-      .eq('id', usuarioEditandoId.value);
-
-    salvandoEdicao.value = false;
-
-    if (error) {
-      erroEdicao.value = error.message;
-      return;
-    }
-
-    await carregarUsuarios();
-    fecharModalEditarFuncao();
-  }
-
-  async function deletarUsuario(item) {
-    fecharMenuOpcoes();
-
-    if (!item?.id) return;
-
-    const confirmado = window.confirm(`Tem certeza que deseja deletar o usuário "${item.nome_completo}"?`);
-    if (!confirmado) return;
-
-    const { error } = await supabase
-      .from('usuario')
-      .delete()
-      .eq('id', item.id);
-
-    if (error) {
-      window.alert(`Erro ao deletar usuário: ${error.message}`);
-      return;
-    }
-
-    await carregarUsuarios();
-  }
-
-  async function cadastrarUsuario() {
-    erroCadastro.value = '';
-    sucessoCadastro.value = '';
-
-    if (!nomeNovoUsuario.value.trim()) {
-      erroCadastro.value = 'Informe o nome do usuário.';
-      return;
-    }
-
-    if (!emailNovoUsuario.value.trim()) {
-      erroCadastro.value = 'Informe o e-mail do usuário.';
-      return;
-    }
-
-    if (!senhaNovoUsuario.value.trim()) {
-      erroCadastro.value = 'Informe a senha do usuário.';
-      return;
-    }
-
-    if (senhaNovoUsuario.value.trim().length < 6) {
-      erroCadastro.value = 'A senha precisa ter pelo menos 6 caracteres.';
-      return;
-    }
-
-    if (!avatarSelecionado.value) {
-      erroCadastro.value = 'Selecione uma imagem para o usuário.';
-      return;
-    }
-
-    salvandoCadastro.value = true;
-    const imagemUrl =
-      avataresDisponiveis.value.find(
-        (avatar) => avatar.key === avatarSelecionado.value,
-      )?.src || avatarUrlPublica(avatarSelecionado.value);
-
-    // Envia dados para a trigger que popula a tabela usuario
-    const { error: authError } = await authSupabase.auth.signUp({
-      email: emailNovoUsuario.value.trim().toLowerCase(),
-      password: senhaNovoUsuario.value,
-      options: {
-        data: {
-          nome_completo: nomeNovoUsuario.value,
-          nome: nomeNovoUsuario.value,
-          funcao: formatarFuncao(funcaoNovoUsuario.value),
-          role: formatarFuncao(funcaoNovoUsuario.value),
-          imagem: imagemUrl,
-          avatar_url: imagemUrl,
-        },
-      },
-    });
-
-    salvandoCadastro.value = false;
-
-    if (authError) {
-      const mensagemErro = String(authError.message || '').toLowerCase();
-
-      if (mensagemErro.includes('user already registered')) {
-        erroCadastro.value = 'Este e-mail já está cadastrado.';
-        return;
-      }
-
-      if (mensagemErro.includes('email rate limit exceeded')) {
-        erroCadastro.value = 'Limite de envio de e-mail atingido.';
-        return;
-      }
-
-      if (mensagemErro.includes('database error saving new user')) {
-        erroCadastro.value =
-          'Erro ao salvar novo usuário no banco de autenticação. Verifique a trigger de criação de usuário no Supabase (campos esperados em raw_user_meta_data).';
-        return;
-      }
-
-      erroCadastro.value = authError.message;
-      return;
-    }
-
-    sucessoCadastro.value = 'Usuário cadastrado com sucesso!';
-    await carregarUsuarios();
-    closeRegisterModal();
-  }
-
-  onMounted(() => {
-    carregarUsuarios();
-  })
-
+onMounted(() => {
+  carregarUsuarios();
+});
 </script>
 
 <template>
   <section class="page" @click="fecharMenuOpcoes">
     <div class="toolbar">
-      <button class="btn" type="button" @click="openRegisterModal">Cadastrar Novo Usuário</button>
+      <button class="btn" type="button" @click="openRegisterModal">
+        Cadastrar Novo Usuário
+      </button>
       <input
         v-model="pesquisa"
         type="search"
         placeholder="Pesquisar por nome"
         class="search-input"
-      >
+      />
       <div class="filters">
         <button
           v-for="filtro in filtros"
@@ -317,10 +196,7 @@
       <ul class="list">
         <li class="element" v-for="item in usuariosFiltrados" :key="item.id">
           <div class="container-left">
-            <img
-              class="avatar"
-              :src="item.imagem"
-            >
+            <img class="avatar" :src="item.imagem" />
           </div>
 
           <div class="container-right">
@@ -373,144 +249,15 @@
       </ul>
     </div>
 
-    <div
-      class="container_modal"
-      v-if="modalRegister"
-      @click="closeRegisterModal"
-    >
-      <div class="modal_content" @click.stop>
-        <div class="modal_inputs">
-          <h2 class="modal_title">Cadastro de Novo Usuário</h2>
-
-          <div class="container_input1">
-            <label for="nome-usuario" class="label">Nome Completo</label>
-            <input
-              id="nome-usuario"
-              type="text"
-              class="input"
-              placeholder="Digite o nome completo"
-              v-model="nomeNovoUsuario"
-            />
-          </div>
-
-          <div class="container_input1">
-            <label for="email-usuario" class="label">E-mail</label>
-            <input
-              id="email-usuario"
-              type="email"
-              class="input"
-              placeholder="Digite o e-mail"
-              v-model="emailNovoUsuario"
-            />
-          </div>
-
-          <div class="container_input1">
-            <label for="senha-usuario" class="label">Senha</label>
-            <input
-              id="senha-usuario"
-              type="password"
-              class="input"
-              placeholder="Digite a senha"
-              v-model="senhaNovoUsuario"
-            />
-          </div>
-
-          <div class="container_input1">
-            <label for="funcao-usuario" class="label">Função</label>
-            <select
-              id="funcao-usuario"
-              class="select"
-              v-model="funcaoNovoUsuario"
-            >
-              <option value="administrador">Administrador</option>
-              <option value="operador">Operador</option>
-            </select>
-          </div>
-
-          <p v-if="erroCadastro" class="cadastro_feedback cadastro_feedback--erro">
-            {{ erroCadastro }}
-          </p>
-          <p v-if="sucessoCadastro" class="cadastro_feedback cadastro_feedback--sucesso">
-            {{ sucessoCadastro }}
-          </p>
-        </div>
-
-        <div class="modal_image_button">
-          <div class="avatar-picker">
-            <p class="label avatar-picker__label">Escolha a imagem</p>
-            <div class="avatar-options">
-              <button
-                v-for="avatar in avataresDisponiveis"
-                :key="avatar.key"
-                class="avatar-option"
-                :class="{ 'avatar-option--active': avatarSelecionado === avatar.key }"
-                type="button"
-                @click="selecionarAvatar(avatar.key)"
-              >
-                <img class="avatar-option__image" :src="avatar.src" :alt="avatar.label" />
-                <span class="avatar-option__label">{{ avatar.label }}</span>
-              </button>
-            </div>
-          </div>
-
-          <button
-            class="modal_btn"
-            type="button"
-            :disabled="salvandoCadastro"
-            @click="cadastrarUsuario"
-          >
-            {{ salvandoCadastro ? 'Cadastrando...' : 'Cadastrar Usuário' }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="container_modal" v-if="modalEditFuncao" @click="fecharModalEditarFuncao">
-      <div class="modal_content modal_content--small" @click.stop>
-        <div class="modal_inputs">
-          <h2 class="modal_title">Editar Função do Usuário</h2>
-
-          <div class="container_input1">
-            <label for="edit-funcao-usuario" class="label">Função</label>
-            <select
-              id="edit-funcao-usuario"
-              class="select"
-              v-model="editFuncaoUsuario"
-            >
-              <option value="administrador">Administrador</option>
-              <option value="operador">Operador</option>
-            </select>
-          </div>
-
-          <p v-if="erroEdicao" class="cadastro_feedback cadastro_feedback--erro">
-            {{ erroEdicao }}
-          </p>
-        </div>
-
-        <div class="modal_actions">
-          <button class="modal_btn modal_btn--secondary" type="button" @click="fecharModalEditarFuncao">
-            Cancelar
-          </button>
-          <button
-            class="modal_btn"
-            type="button"
-            :disabled="salvandoEdicao"
-            @click="salvarEdicaoFuncao"
-          >
-            {{ salvandoEdicao ? 'Salvando...' : 'Salvar função' }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <CadastroUsuarioModal
+      :open="modalRegister"
+      @close="closeRegisterModal"
+      @created="carregarUsuarios"
+    />
   </section>
 </template>
 
 <style scoped>
-
-.page {
-  position: relative;
-}
-
 .toolbar {
   display: flex;
   align-items: center;
@@ -890,100 +637,6 @@
   outline: none;
   border-color: #f6821f;
   box-shadow: 0 0 0 2px rgba(246, 130, 31, 0.15);
-}
-
-.modal_image_button {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.8rem;
-}
-
-.avatar-picker {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.avatar-picker__label {
-  margin: 0;
-}
-
-.avatar-options {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-.avatar-option {
-  border: 1px solid #d9d9d9;
-  border-radius: 16px;
-  background: #fff;
-  padding: 0.65rem;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.45rem;
-  transition: all 0.2s ease;
-}
-
-.avatar-option:hover {
-  border-color: #f6821f;
-  box-shadow: 0 0 0 2px rgba(246, 130, 31, 0.1);
-}
-
-.avatar-option--active {
-  border-color: #f6821f;
-  background: #fff3e8;
-  box-shadow: 0 0 0 2px rgba(246, 130, 31, 0.15);
-}
-
-.avatar-option__image {
-  width: 100%;
-  max-width: 120px;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 50%;
-  border: 3px solid #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.avatar-option__label {
-  font-size: 0.85rem;
-  color: #444;
-  font-weight: 600;
-}
-
-.modal_image {
-  width: 100%;
-  min-height: 210px;
-  border: 1px dashed #d8d8d8;
-  border-radius: 16px;
-  background: #fafafa;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0.6rem;
-}
-
-.modal_image_preview {
-  width: 100%;
-  height: 100%;
-  max-height: 250px;
-  object-fit: cover;
-  border-radius: 12px;
-}
-
-.modal_image_placeholder {
-  font-size: 0.86rem;
-  color: #777;
-  text-align: center;
-}
-
-.input_file_hidden {
-  display: none;
 }
 
 .modal_btn {
