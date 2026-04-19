@@ -828,54 +828,51 @@ async function cadastrarEquipamento() {
 
 <style scoped>
 .container_modal {
-  display: flex;
   position: fixed;
-  z-index: 1;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  background-color: rgba(0, 0, 0, 0.3);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  padding: 1rem;
 }
 
 .modal_content {
-  background-color: #f0f0f0;
-  margin: auto;
-  padding: 20px;
-  border: 1px solid #888;
-  width: 100%;
-  max-width: 800px;
-  border-radius: 10px;
-  display: flex;
+  width: min(920px, 96vw);
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid #ececec;
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.22);
+  display: grid;
+  grid-template-columns: 1.3fr 0.8fr;
   gap: 1rem;
+  padding: 1rem;
 }
 
 .modal_title {
-  margin: 0 0 1rem;
-  color: var(--color-gray);
-  font-family: var(--font-secondary);
+  margin: 0 0 0.4rem;
+  font-size: 1.2rem;
+  color: #1f1f1f;
 }
 
 .modal_inputs {
-  width: 60%;
   display: flex;
   flex-direction: column;
-  gap: 1.4rem;
+  gap: 0.7rem;
 }
 
 .modal_image_button {
-  width: 40%;
   display: flex;
-  justify-content: space-between;
   flex-direction: column;
+  justify-content: center;
   gap: 1rem;
 }
 
 .container_input1 {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem;
 }
 
 .container_input2 {
@@ -894,24 +891,37 @@ async function cadastrarEquipamento() {
 }
 
 .input {
-  padding: 0.5rem;
-  border-radius: 15px;
-  border: none;
+  height: 40px;
+  border: 1px solid #d6d6d6;
+  border-radius: 12px;
+  padding: 0 0.8rem;
+  font-size: 0.92rem;
+  background: #fff;
 }
 
 .select {
-  padding: 0.5rem;
-  border-radius: 15px;
-  border: none;
+  height: 40px;
+  border: 1px solid #d6d6d6;
+  border-radius: 12px;
+  padding: 0 0.8rem;
+  font-size: 0.92rem;
+  background: #fff;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: #f6821f;
+  box-shadow: 0 0 0 2px rgba(246, 130, 31, 0.15);
 }
 
 .modal_image {
   width: 100%;
-  height: 200px;
-  background-color: #d9d9d9;
-  border-radius: 10px;
-  border: none;
-  padding: 0;
+  min-height: 210px;
+  border: 1px dashed #d8d8d8;
+  border-radius: 16px;
+  background: #fafafa;
+  padding: 0.6rem;
   overflow: hidden;
   cursor: pointer;
   display: flex;
@@ -922,13 +932,14 @@ async function cadastrarEquipamento() {
 .modal_image_preview {
   width: 100%;
   height: 100%;
+  max-height: 250px;
   object-fit: cover;
-  display: block;
+  border-radius: 12px;
 }
 
 .modal_image_placeholder {
-  color: #666;
-  font-size: 0.95rem;
+  color: #777;
+  font-size: 0.86rem;
   text-align: center;
   padding: 1rem;
 }
@@ -939,13 +950,18 @@ async function cadastrarEquipamento() {
 
 .modal_btn {
   width: 100%;
-  padding: 0.7rem;
+  height: 42px;
   border-radius: 30px;
   border: none;
-  background-color: var(--highlights);
-  color: white;
-  font-size: 0.9rem;
+  background-color: #f6821f;
+  color: #fff;
+  font-size: 0.95rem;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal_btn:hover {
+  background-color: #ea7717;
 }
 
 .modal_btn:disabled {
@@ -955,7 +971,7 @@ async function cadastrarEquipamento() {
 
 .cadastro_feedback {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
 }
 
 .cadastro_feedback--erro {
@@ -1264,11 +1280,28 @@ async function cadastrarEquipamento() {
 }
 
 .modal_actions {
+  display: flex;
   justify-content: flex-end;
+  gap: 0.6rem;
+  align-items: center;
 }
 
 .modal_btn--secondary {
-  background-color: #c9c9c9;
-  color: #333;
+  background: #efefef;
+  color: #444;
+}
+
+.modal_btn--secondary:hover {
+  background: #e5e5e5;
+}
+
+@media (max-width: 900px) {
+  .modal_content {
+    grid-template-columns: 1fr;
+  }
+
+  .modal_image {
+    min-height: 150px;
+  }
 }
 </style>

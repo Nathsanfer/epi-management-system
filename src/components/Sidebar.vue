@@ -21,14 +21,16 @@ import IconConfiguracaoClear from '../assets/icons_sidebar/configuracao_clear.pn
 import IconLogoutClear from '../assets/icons_sidebar/logout_clear.png'
 
 import { ref, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useSupabase } from '../composables/useSupabase'
 
-const { supabase, session } = useSupabase()
+const { supabase, session, logout } = useSupabase()
 const route = useRoute()
+const router = useRouter()
 
 const funcaoUsuario = ref("")
 const hoverItem = ref(null)
+const modalLogoutAberto = ref(false)
 
 const carregarFuncaoUsuario = async () => {
   const userId = session.value?.user?.id
@@ -91,6 +93,20 @@ const navItemStyle = (path) => ({
   borderRadius: '50%'
 })
 
+function abrirModalLogout() {
+  modalLogoutAberto.value = true
+}
+
+function fecharModalLogout() {
+  modalLogoutAberto.value = false
+}
+
+async function confirmarLogout() {
+  await logout()
+  modalLogoutAberto.value = false
+  router.push('/login')
+}
+
 watch(session, carregarFuncaoUsuario, { immediate: true })
 </script>
 
@@ -115,7 +131,23 @@ watch(session, carregarFuncaoUsuario, { immediate: true })
 
     <ul class="nav-menu container-link-bottom">
       <li v-for="item in visibleBottomItems" :key="item.to" class="list">
+        <button
+          v-if="item.to === '/logout'"
+          type="button"
+          class="nav-link nav-link--button"
+          :style="navItemStyle(item.to)"
+          :title="item.label"
+          @mouseenter="hoverItem = item.to"
+          @mouseleave="hoverItem = null"
+          @click="abrirModalLogout"
+        >
+          <span class="nav-icon">
+            <img :src="isHighlighted(item.to) ? item.iconClear : item.icon" :alt="item.alt" />
+          </span>
+        </button>
+
         <router-link
+          v-else
           :to="item.to"
           class="nav-link"
           :style="navItemStyle(item.to)"
@@ -129,6 +161,21 @@ watch(session, carregarFuncaoUsuario, { immediate: true })
         </router-link>
       </li>
     </ul>
+
+    <div v-if="modalLogoutAberto" class="logout-modal-overlay" @click="fecharModalLogout">
+      <div class="logout-modal" @click.stop>
+        <h3 class="logout-modal-title">Deseja sair?</h3>
+        <p class="logout-modal-text">Você será desconectada da sua conta.</p>
+        <div class="logout-modal-actions">
+          <button type="button" class="logout-btn logout-btn--ghost" @click="fecharModalLogout">
+            Cancelar
+          </button>
+          <button type="button" class="logout-btn logout-btn--danger" @click="confirmarLogout">
+            Sair
+          </button>
+        </div>
+      </div>
+    </div>
   </aside>
 </template>
 
@@ -179,6 +226,13 @@ watch(session, carregarFuncaoUsuario, { immediate: true })
     transition: background-color 0.2s ease;
 }
 
+.nav-link--button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
 .nav-icon {
     display: flex;
     align-items: center;
@@ -189,5 +243,70 @@ watch(session, carregarFuncaoUsuario, { immediate: true })
     width: 24px;
     height: 24px;
     object-fit: contain;
+}
+
+.logout-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+}
+
+.logout-modal {
+  width: min(360px, 92vw);
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #ececec;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.2);
+  padding: 1rem;
+}
+
+.logout-modal-title {
+  margin: 0;
+  font-size: 1rem;
+  color: #262626;
+}
+
+.logout-modal-text {
+  margin: 0.45rem 0 0;
+  font-size: 0.88rem;
+  color: #666;
+}
+
+.logout-modal-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.logout-btn {
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  padding: 0 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.logout-btn--ghost {
+  background: #efefef;
+  color: #444;
+}
+
+.logout-btn--ghost:hover {
+  background: #e5e5e5;
+}
+
+.logout-btn--danger {
+  background: #d93025;
+  color: #fff;
+}
+
+.logout-btn--danger:hover {
+  background: #c0251b;
 }
 </style>

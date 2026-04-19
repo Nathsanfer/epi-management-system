@@ -20,8 +20,10 @@ const login = async () => {
   erro.value = null;
   loading.value = true;
 
+  const emailNormalizado = email.value.trim().toLowerCase();
+
   // Validação básica para garantir que email e senha foram preenchidos
-  if (!email.value || !password.value) {
+  if (!emailNormalizado || !password.value) {
     erro.value = "Email e senha são obrigatórios";
     loading.value = false;
     return;
@@ -30,7 +32,7 @@ const login = async () => {
   try {
     // Tenta fazer login com email e senha usando o Supabase
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.value,
+      email: emailNormalizado,
       password: password.value,
     });
 
@@ -39,9 +41,9 @@ const login = async () => {
 
       // Tratamento de erros específicos
       if (error.message.includes("Invalid login credentials")) {
-        erro.value = "Email ou senha inválidos";
+        erro.value = "Email ou senha inválidos. Se o usuário foi criado agora, confirme se o cadastro no Auth foi concluído.";
       } else if (error.message.includes("Email not confirmed")) {
-        erro.value = "Email não foi confirmado. Verifique seu email";
+        erro.value = "Email não foi confirmado. Verifique sua caixa de entrada ou desative a confirmação de email no Supabase para ambiente de teste.";
       } else if (error.message.includes("Too many requests")) {
         erro.value = "Muitas tentativas. Tente novamente depois";
       } else {
