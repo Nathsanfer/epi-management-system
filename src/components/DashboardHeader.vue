@@ -2,64 +2,58 @@
 import { computed, ref, watch } from "vue";
 import { useSupabase } from "../composables/useSupabase";
 
-// Supabase
 const { supabase, session, loadingSession } = useSupabase();
 
-// Estados
-const nomeCompleto = ref("");
+const nomeCompleto = ref("Usuário");
 const funcao = ref("");
 
-// Buscar dados do usuário
 const carregarDadosUsuario = async () => {
-    const userId = session.value?.user?.id;
+  const userId = session.value?.user?.id;
 
-    console.log("USER ID:", userId);
-    console.log(userId)
+  if (!userId) {
+    console.log("Usuário não autenticado");
+    return;
+  }
 
-    if (!userId) return;
+  const { data, error } = await supabase
+    .from("usuario")
+    .select("nome_completo, funcao")
+    .eq("id", userId)
+    .single();
 
-    const { data, error } = await supabase
-        .from("usuario") // ✅ nome correto
-        .select("nome_completo, funcao")
-        .eq("id", userId) // ✅ correto
-        .maybeSingle();
+  if (error) {
+    console.error("Erro ao buscar usuário:", error.message);
+    nomeCompleto.value = "Usuário";
+    funcao.value = "";
+    return;
+  }
 
-    console.log("DATA:", data);
-
-    if (error) {
-        console.error("Erro ao buscar usuário:", error);
-        return;
-    }
-
-    nomeCompleto.value = data?.nome_completo ?? "Usuário";
-    funcao.value = data?.funcao ?? "";
+  nomeCompleto.value = data?.nome_completo || "Usuário";
+  funcao.value = data?.funcao || "";
 };
 
-// Mensagem dinâmica
 const mensagemPorFuncao = computed(() => {
-    const cargo = funcao.value?.toLowerCase() || "";
+  const cargo = funcao.value.toLowerCase();
 
-    if (cargo.includes("administrador")) {
-        return "Novos registros e relatórios te aguardam.";
-    }
+  if (cargo === "administrador") {
+    return "Novos registros e relatórios te aguardam.";
+  }
 
-    if (cargo.includes("operador")) {
-        return "Fique de olho no estoque e registre as saídas e entregas!";
-    }
+  if (cargo === "operador") {
+    return "Fique de olho no estoque e registre as saídas e entregas!";
+  }
 
-    return "Bem-vindo ao sistema de gestão de EPI.";
+  return "Bem-vindo ao sistema de gestão de EPI.";
 });
 
 watch(
-    () => loadingSession.value,
-    (loading) => {
-        console.log("LOADING:", loading);
-
-        if (!loading && session.value?.user) {
-            carregarDadosUsuario();
-        }
-    },
-    { immediate: true }
+  session,
+  (novaSessao) => {
+    if (novaSessao?.user) {
+      carregarDadosUsuario();
+    }
+  },
+  { immediate: true }
 );
 </script>
 

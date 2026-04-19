@@ -55,6 +55,45 @@ function normalizarTexto(valor) {
     .trim();
 }
 
+function obterQuantidadeAtual(item) {
+  return Number(item?.estoque?.[0]?.quantidade ?? 0);
+}
+
+function diasAteValidade(validade) {
+  if (!validade) return Number.POSITIVE_INFINITY;
+
+  const dataValidade = new Date(`${validade}T00:00:00`);
+  if (Number.isNaN(dataValidade.getTime())) return Number.POSITIVE_INFINITY;
+
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const diffMs = dataValidade.getTime() - hoje.getTime();
+  return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+}
+
+function obterClasseStatusEquipamento(item) {
+  const quantidadeAtual = obterQuantidadeAtual(item);
+  const quantidadeMinima = Number(item?.quantidade_minima ?? 0);
+  const diasValidade = diasAteValidade(item?.validade_certificado);
+
+  const foraValidade = diasValidade < 0;
+  const abaixoMinimo = quantidadeAtual < quantidadeMinima;
+
+  if (foraValidade || abaixoMinimo) {
+    return "element--critico";
+  }
+
+  const validadeProxima = diasValidade <= 30;
+  const noMinimo = quantidadeAtual === quantidadeMinima;
+
+  if (validadeProxima || noMinimo) {
+    return "element--alerta";
+  }
+
+  return "element--ok";
+}
+
 const equipamentosFiltrados = computed(() => {
   const termo = normalizarTexto(pesquisa.value);
 
@@ -437,7 +476,12 @@ async function cadastrarEquipamento() {
     </div>
     <div class="container-scroll">
       <ul class="list">
-        <li class="element" v-for="item in equipamentosFiltrados" :key="item.id">
+        <li
+          class="element"
+          :class="obterClasseStatusEquipamento(item)"
+          v-for="item in equipamentosFiltrados"
+          :key="item.id"
+        >
           <div class="element-main">
             <img class="img" :src="item.imagem" alt="imagem do equipamento" />
             <div class="info_name">
@@ -1033,6 +1077,7 @@ async function cadastrarEquipamento() {
 }
 
 .element {
+  --status-color: #e53935;
   padding: 1rem;
   background-color: #fff;
   display: flex;
@@ -1052,8 +1097,20 @@ async function cadastrarEquipamento() {
   right: 0;
   bottom: 0;
   width: 20px;
-  background-color: #ff0000;
+  background-color: var(--status-color);
   border-radius: 0 30px 30px 0;
+}
+
+.element--critico {
+  --status-color: #e53935;
+}
+
+.element--alerta {
+  --status-color: #fb8c00;
+}
+
+.element--ok {
+  --status-color: #43a047;
 }
 
 .element-main {
