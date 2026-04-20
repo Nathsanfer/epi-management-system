@@ -20,7 +20,7 @@ import IconHistoricoClear from '../assets/icons_sidebar/historico_clear.png'
 import IconConfiguracaoClear from '../assets/icons_sidebar/configuracao_clear.png'
 import IconLogoutClear from '../assets/icons_sidebar/logout_clear.png'
 
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSupabase } from '../composables/useSupabase'
 
@@ -31,6 +31,9 @@ const router = useRouter()
 const funcaoUsuario = ref("")
 const hoverItem = ref(null)
 const modalLogoutAberto = ref(false)
+const menuMobileAberto = ref(false)
+const isMobileViewport = ref(false)
+const MOBILE_BREAKPOINT = 900
 
 const carregarFuncaoUsuario = async () => {
   const userId = session.value?.user?.id
@@ -90,7 +93,7 @@ const isHighlighted = (path) => hoverItem.value === path || isActiveRoute(path)
 
 const navItemStyle = (path) => ({
   backgroundColor: isHighlighted(path) ? '#f6821f' : 'transparent',
-  borderRadius: '50%'
+  borderRadius: isMobileViewport.value && menuMobileAberto.value ? '12px' : '50%'
 })
 
 function abrirModalLogout() {
@@ -104,14 +107,74 @@ function fecharModalLogout() {
 async function confirmarLogout() {
   await logout()
   modalLogoutAberto.value = false
+  menuMobileAberto.value = false
   router.push('/login')
 }
+
+function atualizarViewport() {
+  isMobileViewport.value = window.innerWidth <= MOBILE_BREAKPOINT
+
+  if (!isMobileViewport.value) {
+    menuMobileAberto.value = false
+  }
+}
+
+function toggleMenuMobile() {
+  menuMobileAberto.value = !menuMobileAberto.value
+}
+
+function fecharMenuMobile() {
+  menuMobileAberto.value = false
+}
+
+watch(
+  () => route.path,
+  () => {
+    if (isMobileViewport.value) {
+      menuMobileAberto.value = false
+    }
+  },
+)
+
+onMounted(() => {
+  atualizarViewport()
+  window.addEventListener('resize', atualizarViewport)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', atualizarViewport)
+})
 
 watch(session, carregarFuncaoUsuario, { immediate: true })
 </script>
 
 <template>
-  <aside class="sidebar">
+  <button
+    v-if="isMobileViewport"
+    type="button"
+    class="mobile-toggle"
+    aria-label="Abrir menu"
+    :aria-expanded="menuMobileAberto"
+    @click="toggleMenuMobile"
+  >
+    <span class="mobile-toggle__line"></span>
+    <span class="mobile-toggle__line"></span>
+    <span class="mobile-toggle__line"></span>
+  </button>
+
+  <div
+    v-if="isMobileViewport && menuMobileAberto"
+    class="mobile-backdrop"
+    @click="fecharMenuMobile"
+  ></div>
+
+  <aside
+    class="sidebar"
+    :class="{
+      'sidebar--mobile': isMobileViewport,
+      'sidebar--mobile-open': isMobileViewport && menuMobileAberto,
+    }"
+  >
     <ul class="nav-menu container-link-top">
       <li v-for="item in visibleTopItems" :key="item.to" class="list">
         <router-link
@@ -125,6 +188,7 @@ watch(session, carregarFuncaoUsuario, { immediate: true })
           <span class="nav-icon">
             <img :src="isHighlighted(item.to) ? item.iconClear : item.icon" :alt="item.alt" />
           </span>
+          <span class="nav-label">{{ item.label }}</span>
         </router-link>
       </li>
     </ul>
@@ -144,6 +208,7 @@ watch(session, carregarFuncaoUsuario, { immediate: true })
           <span class="nav-icon">
             <img :src="isHighlighted(item.to) ? item.iconClear : item.icon" :alt="item.alt" />
           </span>
+          <span class="nav-label">{{ item.label }}</span>
         </button>
 
         <router-link
@@ -158,6 +223,7 @@ watch(session, carregarFuncaoUsuario, { immediate: true })
           <span class="nav-icon">
             <img :src="isHighlighted(item.to) ? item.iconClear : item.icon" :alt="item.alt" />
           </span>
+          <span class="nav-label">{{ item.label }}</span>
         </router-link>
       </li>
     </ul>
@@ -224,6 +290,10 @@ watch(session, carregarFuncaoUsuario, { immediate: true })
     text-decoration: none;
     color: inherit;
     transition: background-color 0.2s ease;
+}
+
+.nav-label {
+  display: none;
 }
 
 .nav-link--button {
@@ -308,5 +378,112 @@ watch(session, carregarFuncaoUsuario, { immediate: true })
 
 .logout-btn--danger:hover {
   background: #c0251b;
+}
+
+.mobile-toggle {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .mobile-toggle {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    position: fixed;
+    top: 2rem;
+    left: 1.2rem;
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 12px;
+    background: var(--highlights);
+    padding: 0 10px;
+    z-index: 1301;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  }
+
+  .mobile-toggle__line {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: #fff;
+    border-radius: 999px;
+  }
+
+  .mobile-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 1299;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: min(180px, 82vw);
+    height: 100vh;
+    margin: 0;
+    border-radius: 0 20px 20px 0;
+    padding: 4.2rem 0.8rem 1rem;
+    justify-content: flex-start;
+    gap: 1rem;
+    transform: translateX(-105%);
+    transition: transform 0.28s ease;
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.2);
+    z-index: 1300;
+  }
+
+  .sidebar--mobile-open {
+    transform: translateX(0);
+  }
+
+  .container-link-top,
+  .container-link-bottom {
+    align-items: stretch;
+  }
+
+  .container-link-top {
+    margin-top: 1.3rem;
+  }
+
+  .container-link-bottom {
+    margin-top: 2rem;
+  }
+
+  .list {
+    justify-content: stretch;
+  }
+
+  .nav-link {
+    width: 100%;
+    height: 56px;
+    justify-content: flex-start;
+    border-radius: 14px;
+    padding: 0 0.8rem;
+    gap: 0.95rem;
+  }
+
+  .nav-link--button {
+    width: 100%;
+  }
+
+  .nav-icon img {
+    width: 22px;
+    height: 22px;
+  }
+
+  .nav-label {
+    display: block;
+    font-size: 0.92rem;
+    color: #2f2f2f;
+    font-weight: 600;
+  }
+
+  .logout-modal-overlay {
+    z-index: 1400;
+  }
 }
 </style>

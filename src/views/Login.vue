@@ -314,4 +314,11 @@ const login = async () => {
     border-radius: 2rem 2rem 0 0;
   }
 }
+
+@media (max-width: 500px) {
+  .image {
+    display: none;
+  }
+}
+
 </style>

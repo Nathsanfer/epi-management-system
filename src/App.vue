@@ -1,11 +1,21 @@
 <script setup>
+// Importação dos componentes e das funções do Vue
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+// Importação dos componentes
 import Sidebar from './components/Sidebar.vue'
 import DashboardHeader from './components/DashboardHeader.vue'
 
+/*
+    Essas configurações definem o layout principal da aplicação. 
+    Se a rota atual for uma das rotas protegidas, o layout exibirá o DashboardHeader e a Sidebar.
+    Senão exibirá apenas o conteúdo que tem na rota, sem o header e a sidebar.
+*/
+
+// Obtenção da rota atual
 const route = useRoute()
 
+// Definição das rotas protegidas
 const protectedRoutes = [
   '/dashboard',
   '/panorama',
@@ -18,6 +28,7 @@ const protectedRoutes = [
   '/logout'
 ]
 
+// Computed para verificar se a rota atual é protegida
 const showProtectedLayout = computed(() => protectedRoutes.includes(route.path))
 </script>
 
@@ -64,5 +75,12 @@ const showProtectedLayout = computed(() => protectedRoutes.includes(route.path))
 .app-content {
   flex: 1;
   min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .app-header {
+    padding-left: 5rem;
+    box-sizing: border-box;
+  }
 }
 </style>

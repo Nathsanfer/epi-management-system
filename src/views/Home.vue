@@ -1498,5 +1498,4 @@ const isFaqExpanded = (id) => expandedFaqId.value === id;
   }
 }
 
-
 </style>
