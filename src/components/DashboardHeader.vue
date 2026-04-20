@@ -1,13 +1,18 @@
 <script setup>
+// Importação dos recursos do Vue e do Supabase
 import { computed, ref, watch } from "vue";
 import { useSupabase } from "../composables/useSupabase";
 
-const { supabase, session, loadingSession } = useSupabase();
+// Obtendo a instância do Supabase e a sessão atual do usuário
+const { supabase, session } = useSupabase();
 
+// Variáveis reativas para armazenar o nome completo do usuário e sua função
 const nomeCompleto = ref("Usuário");
 const funcao = ref("");
 
+// Função para carregar os dados do usuário a partir do Supabase
 const carregarDadosUsuario = async () => {
+  // Obtendo o ID do usuário a partir da sessão de autenticação
   const userId = session.value?.user?.id;
 
   if (!userId) {
@@ -28,10 +33,12 @@ const carregarDadosUsuario = async () => {
     return;
   }
 
+  // Atualizando as variáveis reativas com os dados do usuário
   nomeCompleto.value = data?.nome_completo || "Usuário";
   funcao.value = data?.funcao || "";
 };
 
+// Computed para gerar uma mensagem personalizada com base na função do usuário
 const mensagemPorFuncao = computed(() => {
   const cargo = funcao.value.toLowerCase();
 
@@ -46,6 +53,7 @@ const mensagemPorFuncao = computed(() => {
   return "Bem-vindo ao sistema de gestão de EPI.";
 });
 
+// Watch para monitorar mudanças na sessão do usuário e carregar os dados do usuário quando a sessão for atualizada
 watch(
   session,
   (novaSessao) => {
@@ -97,4 +105,40 @@ watch(
     font-size: 1rem;
     font-family: var(--font-primary);
 }
+
+@media (max-width: 900px) {
+  .icon {
+    width: 40px;
+    height: 50px;
+  }
+
+  .welcome {
+    font-size: 1.5rem;
+  }
+
+  .text {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .dashboard-header {
+    margin-top: 0.5rem;
+    gap: 0.4  rem;
+  }
+  
+  .icon {
+    width: 30px;
+    height: 40px;
+  }
+
+  .welcome {
+    font-size: 1.1rem;
+  }
+
+  .text {
+    font-size: 0.7rem;
+  }
+}
+
 </style>

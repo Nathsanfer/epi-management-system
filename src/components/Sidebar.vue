@@ -391,7 +391,7 @@ watch(session, carregarFuncaoUsuario, { immediate: true })
     justify-content: center;
     gap: 5px;
     position: fixed;
-    top: 2rem;
+    top: 1.4rem;
     left: 1.2rem;
     width: 42px;
     height: 42px;
