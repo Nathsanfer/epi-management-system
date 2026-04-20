@@ -247,7 +247,6 @@ const isFaqExpanded = (id) => expandedFaqId.value === id
 
     <!-- SEÇÃO DE DEPOIMENTOS -->
     <section class="testimonials">
-      <!--O atributo aria-hidden indica que a decoração é puramente visual e não deve ser lida por leitores de tela-->
       <div class="container-decoration" aria-hidden="true"></div>
 
       <div class="container-content">
@@ -295,10 +294,8 @@ const isFaqExpanded = (id) => expandedFaqId.value === id
             @click="goToScene(sceneIndex)"></button>
         </div>
 
-
       </div>
 
-      <!--O atributo aria-hidden indica que a decoração é puramente visual e não deve ser lida por leitores de tela-->
       <div class="container-decoration" aria-hidden="true"></div>
     </section>
 

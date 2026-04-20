@@ -22,22 +22,27 @@
     justify-content: space-between;
     box-shadow: 0px 4px 10px rgba(132, 132, 132, 0.1);
 }
+
 .logo {
     margin: 2rem 4rem;
     display: flex;
     gap: 0.5rem;
     font-size: 1.4rem;
 }
+
 .logo1 {
     color: var(--highlights);
 }
+
 .logo2 {
     color: var(--color-gray);
 }
+
 .navigation {
     display: flex;
     align-items: center;
 }
+
 .list-nav {
     display: flex;
     gap: 15rem;
@@ -45,9 +50,11 @@
     margin: 0;
     padding: 0;
 }
+
 .item-nav {
     font-size: 1rem;
 }
+
 .link {
     text-decoration: none;
     color: var(--color-gray);
@@ -73,6 +80,7 @@
 .link.router-link-exact-active::after {
     width: 100%;
 }
+
 .button {
     background-color: var(--highlights);
     color: white;
@@ -89,4 +97,47 @@
     background-color: var(--highlights-hover);
 }
 
+@media (max-width: 1366px) {
+    .list-nav {
+        gap: 8rem;
+    }
+}
+
+@media (max-width: 768px) {
+
+    .logo {
+        font-size: 1.2rem;
+        margin: 2rem 2rem;
+    }
+
+    .list-nav {
+        gap: 3rem;
+    }
+
+    .button {
+        margin: 2rem 2rem;
+    }
+}
+
+@media (max-width: 500px) {
+    .logo {
+        font-size: 1rem;
+        margin: 1rem 1rem;
+    }
+
+    .list-nav {
+        gap: 1.5rem;
+        margin-top: -0.8rem;
+    }
+
+    .link {
+        font-size: 0.8rem;
+    }
+
+    .button {
+        margin: 1rem 1rem;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.7rem;
+    }
+}
 </style>
