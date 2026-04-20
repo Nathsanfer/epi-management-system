@@ -1,19 +1,25 @@
 <script setup>
+// Importação das dependências necessárias
 import { ref, onMounted, computed } from "vue";
+// Importação do cliente Supabase
 import { createClient } from "@supabase/supabase-js";
 
+// Configuração do cliente Supabase usando as variáveis de ambiente
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY,
 );
 
+// Definição das variáveis reativas para armazenar os dados de alunos, funcionários e visitantes
 const alunos = ref([]);
 const funcionarios = ref([]);
 const visitantes = ref([]);
 
+// Variáveis reativas para controle de pesquisa e filtro
 const pesquisa = ref("");
 const filtroAtivo = ref("todos");
 
+// Computed para definir os filtros disponíveis
 const filtros = computed(() => [
   { value: "todos", label: "Todos" },
   { value: "alunos", label: "Alunos" },
@@ -21,6 +27,7 @@ const filtros = computed(() => [
   { value: "funcionarios", label: "Funcionários" }
 ])
 
+// Função para carregar os dados de alunos
 const carregarAlunos = async () => {
   const { data, error } = await supabase.from("aluno").select("*");
 
@@ -32,6 +39,7 @@ const carregarAlunos = async () => {
   alunos.value = data.map(item => ({ ...item, tipo: 'aluno', uniqueId: `aluno-${item.id}` }));
 };
 
+// Função para carregar os dados de funcionários
 const carregarFuncionarios = async () => {
   const { data, error } = await supabase.from("funcionario").select("*");
 
@@ -43,27 +51,33 @@ const carregarFuncionarios = async () => {
   funcionarios.value = data.map(item => ({ ...item, tipo: 'funcionario', uniqueId: `funcionario-${item.id}` }));
 };
 
+// Função para carregar os dados de visitantes
 const carregarVisitantes = async () => {
   const { data, error } = await supabase.from("visitante").select("*");
 
   if (error) {
     console.error("Erro ao carregar visitantes:", error);
+    return;
   }
 
   visitantes.value = data.map(item => ({ ...item, tipo: 'visitante', uniqueId: `visitante-${item.id}` }));
 };
 
+// Carregamento dos dados ao montar o componente
 onMounted(() => {
   carregarAlunos();
   carregarFuncionarios();
   carregarVisitantes();
 });
 
+// Computed para combinar os dados de alunos, funcionários e visitantes em uma única lista
 const todos = computed(() => {
   const listas = [alunos.value, funcionarios.value, visitantes.value];
+  // Determinação do comprimento máximo entre as listas para intercalar os itens
   const maxLen = Math.max(...listas.map((lista) => lista.length), 0);
   const resultado = [];
 
+  // Intercala os itens das listas para criar uma lista combinada
   for (let i = 0; i < maxLen; i += 1) {
     for (const lista of listas) {
       if (lista[i]) resultado.push(lista[i]);
@@ -73,7 +87,9 @@ const todos = computed(() => {
   return resultado;
 });
 
+// Computed para filtrar os itens com base no tipo selecionado e no termo de pesquisa
 const itensFiltrados = computed(() => {
+  // Mapeamento dos valores de filtro para os tipos correspondentes
   const tipoMapa = {
     todos: null,
     alunos: "aluno",
@@ -87,6 +103,7 @@ const itensFiltrados = computed(() => {
   return todos.value.filter((item) => {
     const bateTipo = tipoSelecionado ? item.tipo === tipoSelecionado : true;
 
+    // Criação de um texto concatenado com os campos relevantes para a busca
     const textoBusca = [
       item.nome_completo,
       item.cpf,
@@ -103,19 +120,21 @@ const itensFiltrados = computed(() => {
       .join(" ")
       .toLowerCase();
 
+    // Verificação se o termo de pesquisa bate com o texto concatenado
     const bateBusca = !termo || textoBusca.includes(termo);
 
     return bateTipo && bateBusca;
   });
 });
 
-
+  // Função para obter o rótulo do tipo de item (aluno, visitante ou funcionário)
   const tipoLabel = (item) => {
     if (item.tipo === 'aluno') return 'Aluno';
     if (item.tipo === 'visitante') return 'Visitante';
     return 'Funcionário';
   };
 
+  // Função para obter a classe CSS do badge com base no tipo de item
   const getBadgeClass = (item) => {
     if (item.tipo === 'aluno') return 'badge-aluno';
     if (item.tipo === 'visitante') return 'badge-visitante';
@@ -125,6 +144,7 @@ const itensFiltrados = computed(() => {
 
 <template>
   <section class="page">
+    <!-- BARRA DE PESQUISA E FILTROS -->
     <div class="toolbar">
       <input 
       type="search" 
@@ -147,8 +167,8 @@ const itensFiltrados = computed(() => {
     </div>
 
     <div class="container-scroll">
+      <!-- LISTA DE ITENS FILTRADOS -->
       <ul class="list">
-        <!-- Aluno -->
         <li class="element" v-for="item in itensFiltrados" :key="item.uniqueId">
           <div class="container-left">
             <img class="avatar" :src="item.imagem" :alt="`Avatar de ${item.nome_completo}`" />
@@ -223,6 +243,9 @@ const itensFiltrados = computed(() => {
 </template>
 
 <style scoped>
+
+/* Estilos para a barra de pesquisa e filtros */
+
 .toolbar {
   display: flex;
   align-items: center;
@@ -276,6 +299,8 @@ const itensFiltrados = computed(() => {
   color: #b45b10;
   font-weight: 600;
 }
+
+/* Estilos para a lista de itens filtrados */
 
 .container-scroll {
   margin-top: 1rem;
@@ -465,5 +490,56 @@ const itensFiltrados = computed(() => {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.55rem;
   padding-top: 0.5rem;
+}
+
+@media (max-width: 720px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    margin-top: 1rem;
+  }
+
+  .search-input {
+    padding: 0.6rem 0.9rem;
+  }
+
+  .filters {
+    justify-content: center;
+  }
+
+  .element {
+    gap: 1rem;
+  }
+
+  .container-left {
+    min-width: 100px;
+    width: 100px;
+    padding-right: 0.8rem;
+  }
+}
+
+@media (max-width: 490px) {
+  .filter-btn {
+    padding: 0.4rem 0.7rem;
+    height: auto;
+    font-size: 0.7rem;
+    gap: 0.5rem;
+  }
+
+  .element {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .container-left {
+    flex-direction: row;
+    gap: 0.8rem;
+    padding-right: 0;
+    border-right: none;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 1rem;
+    width: 100%;
+  }
 }
 </style>
