@@ -1,5 +1,5 @@
 <script setup>
-// Importando componentes e funcionalidades necessárias
+// Importando componentes 
 import Header from '../components/Header.vue'
 import Footer from '../components/Footer.vue'
 </script>

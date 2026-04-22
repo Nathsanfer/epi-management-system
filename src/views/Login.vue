@@ -14,6 +14,10 @@ const loading = ref(false);
 const { supabase } = useSupabase();
 const router = useRouter();
 
+const voltarParaHome = () => {
+  router.push("/");
+};
+
 // Função para lidar com o login do usuário
 const login = async () => {
   // Reseta o erro e define o estado de carregamento
@@ -67,6 +71,15 @@ const login = async () => {
 
 <template>
   <div class="container">
+    <button
+      type="button"
+      class="back-home-btn"
+      aria-label="Voltar para home"
+      @click="voltarParaHome"
+    >
+      <img class="back-home-icon" src="../assets/arrow-right.png" alt="" />
+    </button>
+
     <section class="content">
       <div class="auth-card">
         <h1 class="brand"><span>EPI</span> MANAGER</h1>
@@ -136,9 +149,38 @@ const login = async () => {
 
 <style scoped>
 .container {
+  position: relative;
   display: flex;
   min-height: 100vh;
   background: #ffffff;
+}
+
+.back-home-btn {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid #e4e4e4;
+  border-radius: 999px;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+  transition: all 0.2s ease;
+}
+
+.back-home-btn:hover {
+  border-color: var(--highlights);
+  box-shadow: 0 4px 14px rgba(246, 130, 31, 0.24);
+}
+
+.back-home-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  transform: rotate(180deg);
 }
 
 .content {
@@ -312,6 +354,11 @@ const login = async () => {
 
   .img {
     border-radius: 2rem 2rem 0 0;
+  }
+
+  .back-home-btn {
+    top: 0.8rem;
+    left: 0.8rem;
   }
 }
 
