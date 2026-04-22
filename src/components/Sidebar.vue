@@ -58,10 +58,10 @@ const topItems = [
     { label: "Panorama", to: "/panorama", icon: IconPanorama, iconClear: IconPanoramaClear, alt: "Panorama", roles: ["administrador", "operador"] },
     { label: "Cadastro", to: "/cadastro", icon: IconCadastro, iconClear: IconCadastroClear, alt: "Cadastro", roles: ["administrador"] },
     { label: "Estoque", to: "/estoque", icon: IconEstoque, iconClear: IconEstoqueClear, alt: "Estoque", roles: ["administrador", "operador"] },
+    { label: "Movimentação", to: "/movimentacao", icon: IconMovimentacao, iconClear: IconMovimentacaoClear, alt: "Movimentação", roles: ["administrador","operador"] },
     { label: "Relatório", to: "/relatorio", icon: IconRelatorio, iconClear: IconRelatorioClear, alt: "Relatório", roles: ["administrador"] },
-    { label: "Movimentação", to: "/movimentacao", icon: IconMovimentacao, iconClear: IconMovimentacaoClear, alt: "Movimentação", roles: ["operador"] },
-    { label: "Histórico", to: "/historico", icon: IconHistorico, iconClear: IconHistoricoClear, alt: "Histórico", roles: ["administrador", "operador"] }
-]
+
+  ]
 
 const bottomItems = [
     { label: "Configurações", to: "/configuracoes", icon: IconConfiguracao, iconClear: IconConfiguracaoClear, alt: "Configurações", roles: ["administrador", "operador"] },

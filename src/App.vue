@@ -22,8 +22,7 @@ const protectedRoutes = [
   '/cadastro',
   '/estoque',
   '/relatorio',
-  '/movimentacao',
-  '/historico',
+  '/movimentacao',  
   '/configuracoes',
   '/logout'
 ]

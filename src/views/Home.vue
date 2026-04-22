@@ -335,7 +335,7 @@ const isFaqExpanded = (id) => expandedFaqId.value === id;
                   <div class="container-author">
                     <img
                       class="image-author"
-                      src="../assets/author.png"
+                      src="https://i.pinimg.com/474x/21/9e/ae/219eaea67aafa864db091919ce3f5d82.jpg"
                       alt="Autor do depoimento"
                     />
                     <div class="container-text-author">

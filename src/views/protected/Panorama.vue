@@ -306,7 +306,7 @@ const itensFiltrados = computed(() => {
   margin-top: 1rem;
   width: 98%;
   margin-left: 0.5rem;
-  max-height: 490px;
+  max-height: 510px;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
@@ -351,7 +351,7 @@ const itensFiltrados = computed(() => {
   flex-direction: row;
   gap: 1.8rem;
   box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.04),
     0 2px 6px rgba(0, 0, 0, 0.04);
   position: relative;
   overflow: hidden;
@@ -361,7 +361,7 @@ const itensFiltrados = computed(() => {
 .element:hover {
   border-color: #d0d0d0;
   box-shadow:
-    0 12px 36px rgba(0, 0, 0, 0.12),
+    0 12px 36px rgba(0, 0, 0, 0.06),
     0 4px 10px rgba(0, 0, 0, 0.06);
   transform: translateY(-2px);
 }

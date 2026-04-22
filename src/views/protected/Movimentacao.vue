@@ -1,7 +1,348 @@
+<script setup>
+// Importações necessárias
+import { computed, onMounted, ref } from "vue";
+import { useSupabase } from "../../composables/useSupabase";
+import CadastroMovimentacaoModal from "../../components/CadastroMovimentacaoModal.vue";
+
+// Captura a conexão com o Supabase
+const { supabase, session } = useSupabase();
+
+// Imagem reserva
+const fallbackImage = "https://placehold.co/120x120?text=Foto";
+// Lista de botões de filtros
+const filtros = [
+  { value: "todas", label: "Todas" },
+  { value: "entrega", label: "Entregas" },
+  { value: "devolucao", label: "Devoluções" },
+];
+
+// Lista final das movimentações listadas 
+const movimentacoes = ref([]);
+// Listas base para reconstrução das movimentações exibidas
+const movimentacoesBase = ref([]);
+// Lista base dos itens de cada movimentação
+const itensMovimentacaoBase = ref([]);
+// Listas para mapeamento de ids para informações completas
+const usuariosMovimentacao = ref([]);
+// Lista de receptores (alunos, funcionários e visitantes)
+const receptores = ref([]);
+// Lista de equipamentos disponíveis para movimentação (carregada no modal de cadastro)
+const equipamentosDisponiveis = ref([]);
+
+// Armazena texto digitado na barra de pesquisa
+const pesquisa = ref("");
+// Filtro por tipo de movimentação
+const filtroTipo = ref("todas");
+// Controle de abertura do modal de cadastro de movimentação
+const modalCadastroMovimentacao = ref(false);
+// Estados de carregamento para receptores e equipamentos, usados para exibir indicadores de loading no modal
+const carregandoReceptores = ref(false);
+const carregandoEquipamentos = ref(false);
+const funcaoUsuarioAtual = ref("");
+
+// Função para normalizar texto, removendo acentos, convertendo para minúsculas e tirando espaços extras
+const normalizarTexto = (valor = "") =>
+  String(valor)
+    .normalize("NFD") // Separa os caracteres acentuados em letra + acento
+    .replace(/[\u0300-\u036f]/g, "") // Remove os acentos
+    .toLowerCase() // Converte para minúsculas
+    .trim(); // Remove espaços extras no início e fim
+
+// Função para criar uma chave única para cada receptor, combinando tipo e id
+const chaveReceptor = (tipo, id) =>
+  `${normalizarTexto(tipo)}-${String(id ?? "")}`; 
+
+// Função para mapear os dados de receptores (alunos, funcionários e visitantes) para um formato unificado
+const mapearReceptor = (item, tipo) => ({
+  key: chaveReceptor(tipo, item.id),
+  id_receptor: item.id,
+  nome_completo: item.nome_completo || item.nome || "Sem nome",
+  telefone: item.telefone || "",
+  imagem: item.imagem || "",
+  tipo,
+});
+
+// Função para mapear os dados dos usuários para um formato unificado
+const mapearUsuario = (usuario) => ({
+  id: usuario.id,
+  nome_completo: usuario.nome_completo || usuario.nome || "Usuário não identificado",
+  funcao: usuario.funcao || "Operador",
+  imagem: usuario.imagem || "",
+  email: usuario.email || "",
+});
+
+// Função para formatar datas no formato brasileiro (DD/MM/YYYY)
+const formatarDataBR = (valorData) => {
+  if (!valorData) return "-";
+  const data = new Date(valorData);
+  if (Number.isNaN(data.getTime())) return "-";
+  return new Intl.DateTimeFormat("pt-BR").format(data);
+};
+
+// Função para aplicar a imagem de fallback caso a imagem original do usuário ou receptor não carregue
+const aplicarFallbackImagem = (event) => {
+  event.target.src = fallbackImage;
+};
+
+// Função para determinar a classe CSS do badge de tipo do receptor, com base no tipo (aluno, visitante ou funcionário)
+const classeTipoReceptor = (tipo) => {
+  const tipoNormalizado = normalizarTexto(tipo);
+  if (tipoNormalizado === "aluno") return "badge-aluno";
+  if (tipoNormalizado === "visitante") return "badge-visitante";
+  return "badge-funcionario";
+};
+
+const podeRegistrarMovimentacao = computed(
+  () => normalizarTexto(funcaoUsuarioAtual.value) === "operador",
+);
+
+// Funções para abrir e fechar o modal de cadastro de movimentação
+const abrirModalCadastroMovimentacao = () => {
+  modalCadastroMovimentacao.value = true;
+};
+
+const fecharModalCadastroMovimentacao = () => {
+  modalCadastroMovimentacao.value = false;
+};
+
+// Função para reconstruir a lista de movimentações exibidas, combinando os dados das movimentações base, itens, usuários e receptores para criar um formato completo e fácil de exibir na interface
+const reconstruirMovimentacoesExibidas = () => {
+  // Cria mapa de acesso rápido para usuários
+  const mapaUsuarios = new Map(
+    usuariosMovimentacao.value.map((usuario) => [String(usuario.id), usuario]),
+  );
+
+  // Cria mapa de acesso rápido para receptores, usando a chave composta de tipo e id
+  const mapaReceptores = new Map(
+    receptores.value.map((receptor) => [
+      chaveReceptor(receptor.tipo, receptor.id_receptor),
+      receptor,
+    ]),
+  );
+
+  // Cria mapa de acesso rápido para equipamentos
+  const mapaEquipamentos = new Map(
+    equipamentosDisponiveis.value.map((equipamento) => [
+      String(equipamento.id),
+      equipamento,
+    ]),
+  );
+  
+  // Agrupa os itens de movimentação por id_movimentacao para facilitar a associação com cada movimentação
+  const itensPorMovimentacao = new Map();
+
+  // Percorre a tabela de itens de movimentação e agrupa os itens pelo id da movimentação
+  itensMovimentacaoBase.value.forEach((item) => { // Para cada linha da tabela ele executa essa função
+    const chave = String(item.id_movimentacao);
+    if (!itensPorMovimentacao.has(chave)) itensPorMovimentacao.set(chave, []);
+    itensPorMovimentacao.get(chave).push(item);
+  });
+
+  // Percorre as tabelas buscando todos os dados associados para cada movimentação e constrói a lista final de movimentações
+  movimentacoes.value = movimentacoesBase.value.map((movimentacao) => {
+    const usuario = mapaUsuarios.get(String(movimentacao.id_usuario)); // Busca o usuário responsável pela movimentação
+    const receptor = mapaReceptores.get(
+      chaveReceptor(movimentacao.tipo_receptor, movimentacao.id_receptor), // Busca o receptor da movimentação
+    );
+
+    // Para cada movimentação, busca os itens associados 
+    const itens = (itensPorMovimentacao.get(String(movimentacao.id)) || []).map((item) => {
+      const equipamento = mapaEquipamentos.get(String(item.id_equipamento)); // Busca os equipamentos
+
+      return {
+        equipamento_nome: equipamento?.nome || equipamento?.descricao || "Equipamento",
+        equipamento_classificacao: equipamento?.classificacao || "Sem classificação",
+        quantidade: item.quantidade,
+      };
+    });
+
+    return {
+      id: movimentacao.id,
+      data: movimentacao.data,
+      tipo_movimentacao: movimentacao.tipo_movimentacao,
+      tipo_receptor: movimentacao.tipo_receptor,
+      id_receptor: movimentacao.id_receptor,
+      usuario_nome: usuario?.nome_completo || usuario?.nome || "Usuário não identificado",
+      usuario_funcao: usuario?.funcao || "Operador",
+      usuario_imagem: usuario?.imagem || "",
+      receptor_nome: receptor?.nome_completo || movimentacao.receptor_nome || "",
+      receptor_telefone: receptor?.telefone || movimentacao.receptor_telefone || "",
+      receptor_imagem: receptor?.imagem || movimentacao.receptor_imagem || "",
+      itens,
+    };
+  });
+};
+
+const carregarReceptores = async () => {
+  carregandoReceptores.value = true;
+
+  const fontes = [
+    { tabela: "aluno", tipo: "Aluno", erro: "alunos" },
+    { tabela: "funcionario", tipo: "Funcionário", erro: "funcionários" },
+    { tabela: "visitante", tipo: "Visitante", erro: "visitantes" },
+  ];
+
+  const respostas = await Promise.all(
+    fontes.map((fonte) => supabase.from(fonte.tabela).select("*")),
+  );
+
+  receptores.value = respostas.flatMap((resposta, index) => {
+    const fonte = fontes[index];
+    if (resposta.error) {
+      console.error(`Erro ao carregar ${fonte.erro}:`, resposta.error);
+      return [];
+    }
+
+    return (resposta.data || []).map((item) => mapearReceptor(item, fonte.tipo));
+  });
+
+  reconstruirMovimentacoesExibidas();
+  carregandoReceptores.value = false;
+};
+
+const carregarEquipamentosModal = async () => {
+  carregandoEquipamentos.value = true;
+
+  const { data, error } = await supabase
+    .from("equipamento")
+    .select("id, nome, classificacao, imagem")
+    .order("nome", { ascending: true });
+
+  if (error) {
+    console.error("Erro ao carregar equipamentos:", error);
+    equipamentosDisponiveis.value = [];
+    carregandoEquipamentos.value = false;
+    return;
+  }
+
+  equipamentosDisponiveis.value = data || [];
+  reconstruirMovimentacoesExibidas();
+  carregandoEquipamentos.value = false;
+};
+
+const carregarMovimentacoes = async () => {
+  const [
+    { data: movimentacoesData, error: erroMovimentacoes },
+    { data: itensData, error: erroItens },
+  ] = await Promise.all([
+    supabase
+      .from("movimentacao")
+      .select("id, data, id_usuario, tipo_receptor, id_receptor, tipo_movimentacao")
+      .order("data", { ascending: false }),
+    supabase.from("item_movimentacao").select("id_movimentacao, id_equipamento, quantidade"),
+  ]);
+
+  if (erroMovimentacoes) {
+    console.error("Erro ao buscar movimentacoes:", erroMovimentacoes);
+    movimentacoes.value = [];
+    movimentacoesBase.value = [];
+    itensMovimentacaoBase.value = [];
+    return;
+  }
+
+  if (erroItens) {
+    console.error("Erro ao buscar itens da movimentacao:", erroItens);
+  }
+
+  movimentacoesBase.value = movimentacoesData || [];
+  itensMovimentacaoBase.value = itensData || [];
+  reconstruirMovimentacoesExibidas();
+};
+
+const carregarUsuariosMovimentacao = async () => {
+  const { data: dataComEmailAuth, error: erroComEmailAuth } = await supabase.rpc(
+    "listar_usuarios_com_email",
+  );
+
+  if (!erroComEmailAuth && Array.isArray(dataComEmailAuth)) {
+    usuariosMovimentacao.value = dataComEmailAuth.map(mapearUsuario);
+    reconstruirMovimentacoesExibidas();
+    return;
+  }
+
+  if (erroComEmailAuth) {
+    console.error(
+      "Erro ao carregar usuários para movimentação via RPC:",
+      erroComEmailAuth,
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("usuario")
+    .select("id, nome_completo, funcao, imagem");
+
+  if (error) {
+    console.error("Erro ao carregar usuários para movimentação:", error);
+    usuariosMovimentacao.value = [];
+    return;
+  }
+
+  usuariosMovimentacao.value = (data || []).map(mapearUsuario);
+  reconstruirMovimentacoesExibidas();
+};
+
+const carregarFuncaoUsuarioAtual = async () => {
+  const userId = session.value?.user?.id;
+
+  if (!userId) {
+    funcaoUsuarioAtual.value = "";
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("usuario")
+    .select("funcao")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Erro ao carregar função do usuário atual:", error);
+    funcaoUsuarioAtual.value = "";
+    return;
+  }
+
+  funcaoUsuarioAtual.value = data?.funcao || session.value?.user?.user_metadata?.funcao || "";
+};
+
+const movimentacoesFiltradas = computed(() => {
+  const termoPesquisa = normalizarTexto(pesquisa.value);
+  const tipoSelecionado = normalizarTexto(filtroTipo.value);
+
+  return movimentacoes.value.filter((mov) => {
+    const nomeUsuario = normalizarTexto(mov.usuario_nome);
+    const nomeReceptor = normalizarTexto(mov.receptor_nome);
+    const tipoMovimentacao = normalizarTexto(mov.tipo_movimentacao);
+
+    const correspondePesquisa =
+      !termoPesquisa ||
+      nomeUsuario.includes(termoPesquisa) ||
+      nomeReceptor.includes(termoPesquisa);
+
+    const correspondeTipo =
+      tipoSelecionado === "todas" || tipoMovimentacao === tipoSelecionado;
+
+    return correspondePesquisa && correspondeTipo;
+  });
+});
+
+onMounted(() => {
+  carregarFuncaoUsuarioAtual();
+  carregarUsuariosMovimentacao();
+  carregarReceptores();
+  carregarEquipamentosModal();
+  carregarMovimentacoes();
+});
+</script>
+
 <template>
   <section class="page">
     <div class="toolbar">
-      <button class="btn" type="button" @click="abrirModalCadastroMovimentacao">
+      <button
+        v-if="podeRegistrarMovimentacao"
+        class="btn"
+        type="button"
+        @click="abrirModalCadastroMovimentacao"
+      >
         Registrar Nova Movimentação
       </button>
       <input
@@ -32,7 +373,10 @@
             <div class="movement-meta">
               <span
                 class="status-chip"
-                :class="{ 'status-chip--success': normalizarTexto(mov.tipo_movimentacao) === 'entrega' }"
+                :class="{
+                  'status-chip--success':
+                    normalizarTexto(mov.tipo_movimentacao) === 'entrega',
+                }"
               >
                 {{ mov.tipo_movimentacao }}
               </span>
@@ -74,8 +418,11 @@
                 </div>
                 <div class="info-participant">
                   <p class="name">{{ mov.receptor_nome }}</p>
-                  <p class="phone">{{ mov.receptor_telefone || '-' }}</p>
-                  <p class="badge-tipo" :class="classeTipoReceptor(mov.tipo_receptor)">
+                  <p class="phone">{{ mov.receptor_telefone || "-" }}</p>
+                  <p
+                    class="badge-tipo"
+                    :class="classeTipoReceptor(mov.tipo_receptor)"
+                  >
                     {{ mov.tipo_receptor }}
                   </p>
                 </div>
@@ -96,7 +443,9 @@
                 :key="`${mov.id}-${item.equipamento_nome}-${idx}`"
               >
                 <p class="name-equipment">{{ item.equipamento_nome }}</p>
-                <p class="classification">{{ item.equipamento_classificacao }}</p>
+                <p class="classification">
+                  {{ item.equipamento_classificacao }}
+                </p>
                 <p class="quantity">Qtd: {{ item.quantidade }}</p>
               </div>
             </div>
@@ -116,382 +465,6 @@
     />
   </section>
 </template>
-
-<script setup>
-import { computed, onMounted, ref } from 'vue';
-import { useSupabase } from '../../composables/useSupabase';
-import CadastroMovimentacaoModal from '../../components/CadastroMovimentacaoModal.vue';
-
-const { supabase, session } = useSupabase();
-
-const fallbackImage = 'https://placehold.co/120x120?text=Foto';
-const movimentacoes = ref([]);
-const movimentacoesBase = ref([]);
-const itensMovimentacaoBase = ref([]);
-const usuariosMovimentacao = ref([]);
-const perfilUsuarioLogado = ref({
-  nome: '',
-  funcao: 'Operador',
-  imagem: '',
-});
-const pesquisa = ref('');
-const filtroTipo = ref('todas');
-const modalCadastroMovimentacao = ref(false);
-const receptores = ref([]);
-const carregandoReceptores = ref(false);
-const equipamentosDisponiveis = ref([]);
-const carregandoEquipamentos = ref(false);
-const filtros = computed(() => [
-  { value: 'todas', label: 'Todas' },
-  { value: 'entrega', label: 'Entregas' },
-  { value: 'devolucao', label: 'Devoluções' },
-]);
-
-const abrirModalCadastroMovimentacao = () => {
-  modalCadastroMovimentacao.value = true;
-};
-
-const fecharModalCadastroMovimentacao = () => {
-  modalCadastroMovimentacao.value = false;
-};
-
-const normalizarTexto = (valor = '') =>
-  String(valor)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim();
-
-const formatarDataBR = (valorData) => {
-  if (!valorData) return '-';
-  const data = new Date(valorData);
-  if (Number.isNaN(data.getTime())) return '-';
-  return new Intl.DateTimeFormat('pt-BR').format(data);
-};
-
-const aplicarFallbackImagem = (event) => {
-  event.target.src = fallbackImage;
-};
-
-const classeTipoReceptor = (tipo) => {
-  const tipoNormalizado = normalizarTexto(tipo);
-
-  if (tipoNormalizado === 'aluno') return 'badge-aluno';
-  if (tipoNormalizado === 'visitante') return 'badge-visitante';
-  return 'badge-funcionario';
-};
-
-const carregarReceptores = async () => {
-  carregandoReceptores.value = true;
-
-  const [alunosRes, funcionariosRes, visitantesRes] = await Promise.all([
-    supabase.from('aluno').select('*'),
-    supabase.from('funcionario').select('*'),
-    supabase.from('visitante').select('*'),
-  ]);
-
-  if (alunosRes.error) {
-    console.error('Erro ao carregar alunos:', alunosRes.error);
-  }
-  if (funcionariosRes.error) {
-    console.error('Erro ao carregar funcionários:', funcionariosRes.error);
-  }
-  if (visitantesRes.error) {
-    console.error('Erro ao carregar visitantes:', visitantesRes.error);
-  }
-
-  const mapearLista = (lista = [], tipo) =>
-    (lista || []).map((item) => ({
-      key: `${normalizarTexto(tipo)}-${item.id}`,
-      id_receptor: item.id,
-      nome_completo: item.nome_completo || item.nome || 'Sem nome',
-      telefone: item.telefone || '',
-      imagem: item.imagem || '',
-      tipo,
-    }));
-
-  receptores.value = [
-    ...mapearLista(alunosRes.data, 'Aluno'),
-    ...mapearLista(funcionariosRes.data, 'Funcionário'),
-    ...mapearLista(visitantesRes.data, 'Visitante'),
-  ];
-
-  reconstruirMovimentacoesExibidas();
-  carregandoReceptores.value = false;
-};
-
-const carregarEquipamentosModal = async () => {
-  carregandoEquipamentos.value = true;
-
-  const { data, error } = await supabase
-    .from('equipamento')
-    .select('id, nome, classificacao, imagem')
-    .order('nome', { ascending: true });
-
-  if (error) {
-    console.error('Erro ao carregar equipamentos:', error);
-    equipamentosDisponiveis.value = [];
-    carregandoEquipamentos.value = false;
-    return;
-  }
-
-  equipamentosDisponiveis.value = data || [];
-  reconstruirMovimentacoesExibidas();
-  carregandoEquipamentos.value = false;
-};
-
-const agruparMovimentacoes = (registros = []) => {
-  const agrupadas = new Map();
-
-  registros.forEach((registro) => {
-    if (!agrupadas.has(registro.id)) {
-      agrupadas.set(registro.id, {
-        id: registro.id,
-        data: registro.data,
-        tipo_movimentacao: registro.tipo_movimentacao,
-        tipo_receptor: registro.tipo_receptor,
-        id_receptor: registro.id_receptor,
-        usuario_nome: registro.usuario_nome,
-        usuario_funcao: registro.usuario_funcao,
-        usuario_imagem: registro.usuario_imagem,
-        receptor_nome: registro.receptor_nome,
-        receptor_telefone: registro.receptor_telefone,
-        receptor_imagem: registro.receptor_imagem,
-        itens: [],
-      });
-    }
-
-    agrupadas.get(registro.id).itens.push({
-      equipamento_nome: registro.equipamento_nome,
-      equipamento_classificacao: registro.equipamento_classificacao,
-      quantidade: registro.quantidade,
-    });
-  });
-
-  return Array.from(agrupadas.values());
-};
-
-const reconstruirMovimentacoesExibidas = () => {
-  const mapaUsuarios = new Map(
-    usuariosMovimentacao.value.map((usuario) => [String(usuario.id), usuario]),
-  );
-
-  const mapaReceptores = new Map(
-    receptores.value.map((receptor) => [
-      `${normalizarTexto(receptor.tipo)}-${String(receptor.id_receptor)}`,
-      receptor,
-    ]),
-  );
-
-  const mapaEquipamentos = new Map(
-    equipamentosDisponiveis.value.map((equipamento) => [String(equipamento.id), equipamento]),
-  );
-
-  const itensPorMovimentacao = new Map();
-
-  itensMovimentacaoBase.value.forEach((item) => {
-    const chave = String(item.id_movimentacao);
-
-    if (!itensPorMovimentacao.has(chave)) {
-      itensPorMovimentacao.set(chave, []);
-    }
-
-    itensPorMovimentacao.get(chave).push(item);
-  });
-
-  movimentacoes.value = movimentacoesBase.value.map((movimentacao) => {
-    const usuario = mapaUsuarios.get(String(movimentacao.id_usuario));
-    const receptor = mapaReceptores.get(
-      `${normalizarTexto(movimentacao.tipo_receptor)}-${String(movimentacao.id_receptor)}`,
-    );
-
-    const itens = (itensPorMovimentacao.get(String(movimentacao.id)) || []).map((item) => {
-      const equipamento = mapaEquipamentos.get(String(item.id_equipamento));
-
-      return {
-        equipamento_nome: equipamento?.nome || equipamento?.descricao || 'Equipamento',
-        equipamento_classificacao: equipamento?.classificacao || 'Sem classificação',
-        quantidade: item.quantidade,
-      };
-    });
-
-    return {
-      id: movimentacao.id,
-      data: movimentacao.data,
-      tipo_movimentacao: movimentacao.tipo_movimentacao,
-      tipo_receptor: movimentacao.tipo_receptor,
-      id_receptor: movimentacao.id_receptor,
-      usuario_nome: usuario?.nome_completo || usuario?.nome || 'Usuário não identificado',
-      usuario_funcao: usuario?.funcao || 'Operador',
-      usuario_imagem: usuario?.imagem || '',
-      receptor_nome: receptor?.nome_completo || movimentacao.receptor_nome || '',
-      receptor_telefone: receptor?.telefone || movimentacao.receptor_telefone || '',
-      receptor_imagem: receptor?.imagem || movimentacao.receptor_imagem || '',
-      itens,
-    };
-  });
-};
-
-const carregarMovimentacoes = async () => {
-  const [{ data: movimentacoesData, error: erroMovimentacoes }, { data: itensData, error: erroItens }] =
-    await Promise.all([
-      supabase
-        .from('movimentacao')
-        .select('id, data, id_usuario, tipo_receptor, id_receptor, tipo_movimentacao')
-        .order('data', { ascending: false }),
-      supabase.from('item_movimentacao').select('id_movimentacao, id_equipamento, quantidade'),
-    ]);
-
-  if (erroMovimentacoes) {
-    console.error('Erro ao buscar movimentacoes:', erroMovimentacoes);
-    movimentacoes.value = [];
-    movimentacoesBase.value = [];
-    itensMovimentacaoBase.value = [];
-    return;
-  }
-
-  if (erroItens) {
-    console.error('Erro ao buscar itens da movimentacao:', erroItens);
-  }
-
-  movimentacoesBase.value = movimentacoesData || [];
-  itensMovimentacaoBase.value = itensData || [];
-  reconstruirMovimentacoesExibidas();
-};
-
-const carregarUsuariosMovimentacao = async () => {
-  const { data: dataComEmailAuth, error: erroComEmailAuth } = await supabase
-    .rpc('listar_usuarios_com_email');
-
-  if (!erroComEmailAuth && Array.isArray(dataComEmailAuth)) {
-    usuariosMovimentacao.value = dataComEmailAuth.map((usuario) => ({
-      id: usuario.id,
-      nome_completo: usuario.nome_completo || usuario.nome || 'Usuário não identificado',
-      funcao: usuario.funcao || 'Operador',
-      imagem: usuario.imagem || '',
-      email: usuario.email || '',
-    }));
-    reconstruirMovimentacoesExibidas();
-    return;
-  }
-
-  if (erroComEmailAuth) {
-    console.error('Erro ao carregar usuários para movimentação via RPC:', erroComEmailAuth);
-  }
-
-  const { data, error } = await supabase
-    .from('usuario')
-    .select('id, nome_completo, funcao, imagem');
-
-  if (error) {
-    console.error('Erro ao carregar usuários para movimentação:', error);
-    usuariosMovimentacao.value = [];
-    return;
-  }
-
-  usuariosMovimentacao.value = (data || []).map((usuario) => ({
-    id: usuario.id,
-    nome_completo: usuario.nome_completo || usuario.nome || 'Usuário não identificado',
-    funcao: usuario.funcao || 'Operador',
-    imagem: usuario.imagem || '',
-  }));
-  reconstruirMovimentacoesExibidas();
-};
-
-const enriquecerMovimentacoesComReceptores = () => {
-  const mapaReceptores = new Map(
-    receptores.value.map((receptor) => [
-      `${normalizarTexto(receptor.tipo)}-${String(receptor.id_receptor)}`,
-      receptor,
-    ]),
-  );
-
-  movimentacoes.value = movimentacoes.value.map((movimentacao) => {
-    if (movimentacao.receptor_nome && movimentacao.receptor_telefone && movimentacao.receptor_imagem) {
-      return movimentacao;
-    }
-
-    const receptorEncontrado = mapaReceptores.get(
-      `${normalizarTexto(movimentacao.tipo_receptor)}-${String(movimentacao.id_receptor ?? '')}`,
-    );
-
-    if (!receptorEncontrado) {
-      return movimentacao;
-    }
-
-    return {
-      ...movimentacao,
-      receptor_nome: movimentacao.receptor_nome || receptorEncontrado.nome_completo,
-      receptor_telefone: movimentacao.receptor_telefone || receptorEncontrado.telefone,
-      receptor_imagem: movimentacao.receptor_imagem || receptorEncontrado.imagem,
-    };
-  });
-};
-
-const carregarPerfilUsuarioLogado = async () => {
-  const user = session.value?.user;
-
-  if (!user?.id) {
-    perfilUsuarioLogado.value = {
-      nome: 'Usuário logado',
-      funcao: 'Operador',
-      imagem: '',
-    };
-    return;
-  }
-
-  const { data, error } = await supabase
-    .from('usuario')
-    .select('nome_completo, funcao, imagem')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Erro ao carregar perfil do usuário:', error);
-  }
-
-  const nomeDaSessao =
-    user.user_metadata?.nome_completo ||
-    user.user_metadata?.name ||
-    user.email?.split('@')[0] ||
-    'Usuário logado';
-
-  perfilUsuarioLogado.value = {
-    nome: data?.nome_completo || nomeDaSessao,
-    funcao: data?.funcao || user.user_metadata?.funcao || 'Operador',
-    imagem: data?.imagem || user.user_metadata?.imagem || '',
-  };
-};
-
-const movimentacoesFiltradas = computed(() => {
-  const termoPesquisa = normalizarTexto(pesquisa.value);
-  const tipoSelecionado = normalizarTexto(filtroTipo.value);
-
-  return movimentacoes.value.filter((mov) => {
-    const nomeUsuario = normalizarTexto(mov.usuario_nome);
-    const nomeReceptor = normalizarTexto(mov.receptor_nome);
-    const tipoMovimentacao = normalizarTexto(mov.tipo_movimentacao);
-
-    const correspondePesquisa =
-      !termoPesquisa ||
-      nomeUsuario.includes(termoPesquisa) ||
-      nomeReceptor.includes(termoPesquisa);
-
-    const correspondeTipo =
-      tipoSelecionado === 'todas' || tipoMovimentacao === tipoSelecionado;
-
-    return correspondePesquisa && correspondeTipo;
-  });
-});
-
-onMounted(() => {
-  carregarPerfilUsuarioLogado();
-  carregarUsuariosMovimentacao();
-  carregarReceptores();
-  carregarEquipamentosModal();
-  carregarMovimentacoes();
-});
-</script>
 
 <style scoped>
 .toolbar {
@@ -568,7 +541,7 @@ onMounted(() => {
   margin-top: 1rem;
   width: 98%;
   margin-left: 0.5rem;
-  max-height: 490px;
+  max-height: 510px;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
@@ -755,11 +728,6 @@ onMounted(() => {
   color: #e65100;
 }
 
-.badge-tipo--neutral {
-  background: #eaf0ff;
-  color: #2a4ba0;
-}
-
 .badge-aluno {
   background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
   color: #0d47a1;
@@ -901,7 +869,6 @@ onMounted(() => {
     width: 100%;
     text-align: left;
   }
-
 }
 
 @media (max-width: 520px) {

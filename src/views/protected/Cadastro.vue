@@ -328,7 +328,7 @@ onMounted(() => {
   margin-top: 1rem;
   width: 98%;
   margin-left: 0.5rem;
-  max-height: 490px;
+  max-height: 510px;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
@@ -373,7 +373,7 @@ onMounted(() => {
   flex-direction: row;
   gap: 1.8rem;
   box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.04),
     0 2px 6px rgba(0, 0, 0, 0.04);
   position: relative;
   overflow: hidden;
@@ -384,7 +384,7 @@ onMounted(() => {
 .element:hover {
   border-color: #d0d0d0;
   box-shadow:
-    0 12px 36px rgba(0, 0, 0, 0.12),
+    0 12px 36px rgba(0, 0, 0, 0.06),
     0 4px 10px rgba(0, 0, 0, 0.06);
   transform: translateY(-2px);
 }
@@ -689,13 +689,29 @@ onMounted(() => {
   color: #047857;
 }
 
-@media (max-width: 900px) {
-  .modal_content {
-    grid-template-columns: 1fr;
+@media (max-width: 850px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    margin-top: 1rem;
   }
 
-  .modal_image {
-    min-height: 150px;
+  .search-input {
+    padding: 0.6rem 0.9rem;
+  }
+
+  .filters {
+    justify-content: center;
+  }
+
+  .element {
+    gap: 1rem;
+  }
+
+  .container-left {
+    min-width: 100px;
+    width: 100px;
+    padding-right: 0.8rem;
   }
 }
 </style>

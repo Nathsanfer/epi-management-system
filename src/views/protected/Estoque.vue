@@ -411,16 +411,28 @@ async function deletarEquipamento(item) {
 
 .element {
   --status-color: #e53935;
+  margin: 0;
   padding: 1rem;
-  background-color: #fff;
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  border-radius: 30px;
+  border-radius: 20px;
   width: 96%;
   position: relative;
   overflow: visible;
-  border: 1px solid #aeaeae;
+  border: 1px solid #e0e0e0;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.04),
+    0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.element:hover {
+  border-color: #d0d0d0;
+  box-shadow:
+    0 12px 36px rgba(0, 0, 0, 0.06),
+    0 4px 10px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
 }
 
 .element::after {

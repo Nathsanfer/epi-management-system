@@ -14,7 +14,6 @@ import Cadastro from '../views/protected/Cadastro.vue'
 import Estoque from '../views/protected/Estoque.vue'    
 import Relatorio from '../views/protected/Relatorio.vue'
 import Movimentacao from '../views/protected/Movimentacao.vue'
-import Historico from '../views/protected/Historico.vue'
 import Configuracoes from '../views/protected/Configuracoes.vue'
 
 const routes = [
@@ -30,7 +29,6 @@ const routes = [
     { path: '/estoque', component: Estoque, meta: { requiresAuth: true } },
     { path: '/relatorio', component: Relatorio, meta: { requiresAuth: true } },
     { path: '/movimentacao', component: Movimentacao, meta: { requiresAuth: true } },
-    { path: '/historico', component: Historico, meta: { requiresAuth: true } },
     { path: '/configuracoes', component: Configuracoes, meta: { requiresAuth: true } },
 
     // Rota fallback (404)
