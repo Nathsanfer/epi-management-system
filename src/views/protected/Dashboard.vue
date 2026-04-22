@@ -49,6 +49,18 @@ const formatarDataHora = (valor) => {
     }).format(data);
 };
 
+const formatarData = (valor) => {
+    if (!valor) return "-";
+    const data = new Date(`${valor}T00:00:00`);
+    if (Number.isNaN(data.getTime())) return "-";
+
+    return new Intl.DateTimeFormat("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+    }).format(data);
+};
+
 const normalizarTexto = (valor = "") =>
     String(valor)
         .normalize("NFD")
@@ -182,12 +194,30 @@ const carregarAlertas = async () => {
             const quantidadeAtual = Number(item?.estoque?.[0]?.quantidade ?? 0);
             const quantidadeMinima = Number(item?.quantidade_minima ?? 0);
             const diasValidade = diasAteValidade(item?.validade_certificado);
-            const precisaAlerta =
-                quantidadeAtual <= quantidadeMinima || diasValidade <= 30;
+            const alertaEstoque = quantidadeAtual <= quantidadeMinima;
+            const alertaValidade = diasValidade <= 30;
+            const precisaAlerta = alertaEstoque || alertaValidade;
 
             if (!precisaAlerta) return null;
 
             const risco = descreverRisco(item, quantidadeAtual);
+            const detalhes = [];
+
+            if (alertaEstoque) {
+                detalhes.push(`Estoque: ${quantidadeAtual} (mínimo ${quantidadeMinima})`);
+            }
+
+            if (alertaValidade) {
+                if (diasValidade < 0) {
+                    detalhes.push(
+                        `Validade: vencido em ${formatarData(item.validade_certificado)}`,
+                    );
+                } else {
+                    detalhes.push(
+                        `Validade: ${formatarData(item.validade_certificado)} (vence em ${diasValidade} dia(s))`,
+                    );
+                }
+            }
 
             return {
                 id: item.id,
@@ -196,6 +226,7 @@ const carregarAlertas = async () => {
                 quantidadeAtual,
                 quantidadeMinima,
                 risco,
+                detalhes,
             };
         })
         .filter(Boolean)
@@ -461,8 +492,9 @@ onMounted(() => {
                     <li v-for="item in alertas" :key="item.id" class="alert-item">
                         <div>
                             <p class="alert-name">{{ item.nome }}</p>
-                            <p class="alert-meta">
-                                {{ item.classificacao }} • {{ item.quantidadeAtual }} em estoque (mínimo {{ item.quantidadeMinima }})
+                            <p class="alert-meta">{{ item.classificacao }}</p>
+                            <p v-for="(detalhe, idx) in item.detalhes" :key="`${item.id}-${idx}`" class="alert-detail">
+                                {{ detalhe }}
                             </p>
                         </div>
                         <span class="alert-tag" :class="item.risco.classe">{{ item.risco.texto }}</span>
@@ -775,6 +807,12 @@ onMounted(() => {
     margin: 0.15rem 0 0;
     color: #67728f;
     font-size: 0.76rem;
+}
+
+.alert-detail {
+    margin: 0.15rem 0 0;
+    color: #4f5c79;
+    font-size: 0.75rem;
 }
 
 .alert-tag {
