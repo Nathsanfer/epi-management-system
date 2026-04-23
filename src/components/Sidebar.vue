@@ -250,7 +250,7 @@ watch(session, carregarFuncaoUsuario, { immediate: true })
     background-color: #fff;
     width: 60px;
     margin: 0 1rem;
-    height: 530px;
+    height: 78vh;
     display: flex;
     flex-direction: column;
     align-items: center;

@@ -1,9 +1,11 @@
 <script setup>
+// Dependencias do painel e acesso ao Supabase.
 import { computed, onMounted, ref } from "vue";
 import { useSupabase } from "../../composables/useSupabase";
 
 const { supabase } = useSupabase();
 
+// Estado principal da tela.
 const carregando = ref(true);
 const erroPainel = ref("");
 
@@ -20,11 +22,13 @@ const resumo = ref({
 const alertas = ref([]);
 const ultimasMovimentacoes = ref([]);
 
+// Texto do período exibido no bloco de atividade mensal.
 const periodoMesTexto = computed(() => {
     const agora = new Date();
     return new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(agora);
 });
 
+// Percentuais usados nas barras de distribuição mensal.
 const taxaEntregaMes = computed(() => {
     if (!resumo.value.movimentacoesMes) return 0;
     return Math.round((resumo.value.entregasMes / resumo.value.movimentacoesMes) * 100);
@@ -35,6 +39,7 @@ const taxaDevolucaoMes = computed(() => {
     return Math.round((resumo.value.devolucoesMes / resumo.value.movimentacoesMes) * 100);
 });
 
+// Formata data e hora para exibição na timeline.
 const formatarDataHora = (valor) => {
     if (!valor) return "-";
     if (typeof valor === "string" && /^\d{4}-\d{2}-\d{2}$/.test(valor)) {
@@ -63,6 +68,7 @@ const formatarDataHora = (valor) => {
     }).format(data);
 };
 
+// Formata datas de validade no padrão brasileiro.
 const formatarData = (valor) => {
     if (!valor) return "-";
     const data = new Date(`${valor}T00:00:00`);
@@ -75,6 +81,7 @@ const formatarData = (valor) => {
     }).format(data);
 };
 
+// Normaliza textos para comparação e filtro.
 const normalizarTexto = (valor = "") =>
     String(valor)
         .normalize("NFD")
@@ -82,6 +89,7 @@ const normalizarTexto = (valor = "") =>
         .toLowerCase()
         .trim();
 
+// Gera uma chave local de data no formato YYYY-MM-DD.
 const chaveDataLocal = (valor) => {
     if (!valor) return "";
 
@@ -99,6 +107,7 @@ const chaveDataLocal = (valor) => {
     return `${ano}-${mes}-${dia}`;
 };
 
+// Calcula quantos dias faltam para a validade do certificado.
 const diasAteValidade = (validade) => {
     if (!validade) return Number.POSITIVE_INFINITY;
 
@@ -112,6 +121,7 @@ const diasAteValidade = (validade) => {
     return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 };
 
+// Define a gravidade visual do alerta do equipamento.
 const descreverRisco = (equipamento, quantidadeAtual) => {
     const quantidadeMinima = Number(equipamento?.quantidade_minima ?? 0);
     const diasValidade = diasAteValidade(equipamento?.validade_certificado);
@@ -147,6 +157,7 @@ const descreverRisco = (equipamento, quantidadeAtual) => {
     };
 };
 
+// Carrega os números principais do painel: estoque, movimentações e receptores.
 const carregarResumo = async () => {
     const agora = new Date();
     const inicioHoje = new Date(agora);
@@ -211,6 +222,7 @@ const carregarResumo = async () => {
     };
 };
 
+// Busca equipamentos com alerta de estoque ou validade.
 const carregarAlertas = async () => {
     const { data, error } = await supabase
         .from("equipamento")
@@ -265,6 +277,7 @@ const carregarAlertas = async () => {
     alertas.value = itensComAlerta;
 };
 
+// Busca a timeline com as movimentações mais recentes e seus relacionamentos.
 const carregarUltimasMovimentacoes = async () => {
     const { data: movimentacoesData, error: movimentacoesError } = await supabase
         .from("movimentacao")
@@ -399,6 +412,7 @@ const carregarUltimasMovimentacoes = async () => {
     });
 };
 
+// Carrega todo o conteúdo da dashboard em paralelo.
 const carregarDashboard = async () => {
     carregando.value = true;
     erroPainel.value = "";
@@ -417,6 +431,7 @@ const carregarDashboard = async () => {
     }
 };
 
+// Dispara o carregamento inicial ao montar a tela.
 onMounted(() => {
     carregarDashboard();
 });
@@ -424,6 +439,7 @@ onMounted(() => {
 
 <template>
     <section class="dashboard-page">
+        <!-- SEÇÃO DA HERO DA DASHBOARD -->
         <div class="hero">
             <div class="hero-content">
                 <p class="eyebrow">Painel de controle</p>
@@ -437,9 +453,11 @@ onMounted(() => {
             </button>
         </div>
 
+        <!-- CARREGAMENTO E ERROS -->
         <p v-if="erroPainel" class="feedback feedback--erro">{{ erroPainel }}</p>
         <p v-if="carregando" class="feedback">Carregando indicadores...</p>
 
+        <!-- SEÇÃO DE INDICADORES -->
         <div v-else class="dashboard-grid">
             <article class="metric-card">
                 <p class="metric-label">Equipamentos cadastrados</p>
@@ -463,6 +481,7 @@ onMounted(() => {
         </div>
 
         <div v-if="!carregando" class="content-grid">
+            <!-- PAINEL DE MOVIMENTAÇÕES RECENTES -->
             <article class="panel panel--activity">
                 <div class="panel-header">
                     <h2>Atividade de {{ periodoMesTexto }}</h2>
@@ -511,6 +530,7 @@ onMounted(() => {
                 <p v-else class="empty">Sem movimentações recentes.</p>
             </article>
 
+            <!-- PAINEL DE ALERTAS -->
             <article class="panel panel--alerts">
                 <div class="panel-header">
                     <h2>Alertas importantes</h2>
@@ -537,12 +557,15 @@ onMounted(() => {
 
 <style scoped>
 .dashboard-page {
-    margin-left: 0.5rem;
-    margin-right: 0.5rem;
+    margin-left: 0.4rem;
+    margin-right: 1rem;
     display: flex;
     flex-direction: column;
     gap: 0.8rem;
+    height: 96%;
 }
+
+/* Estilização da seção da hero */
 
 .hero {
     display: flex;
@@ -593,6 +616,8 @@ onMounted(() => {
     background: rgba(255, 255, 255, 0.28);
 }
 
+/* Estilização de carregamento e erros */
+
 .feedback {
     margin: 0;
     color: #4c5670;
@@ -602,6 +627,8 @@ onMounted(() => {
 .feedback--erro {
     color: #b42318;
 }
+
+/* Estilização da seção de indicadores */
 
 .dashboard-grid {
     display: grid;
@@ -631,10 +658,13 @@ onMounted(() => {
     line-height: 1;
 }
 
+/* Estilização geral dos painéis */
+
 .content-grid {
     display: grid;
     grid-template-columns: 1.2fr 0.8fr;
     gap: 0.85rem;
+    height: 68%;
 }
 
 .panel {
@@ -643,7 +673,6 @@ onMounted(() => {
     background: #fff;
     box-shadow: 0 10px 22px rgba(30, 44, 73, 0.08);
     padding: 1rem;
-    height: 340px;
 }
 
 .panel-header {
@@ -652,6 +681,7 @@ onMounted(() => {
     align-items: flex-end;
     gap: 0.6rem;
     margin-bottom: 0.8rem;
+    height: 3vh;
 }
 
 .panel-header h2 {
@@ -666,11 +696,14 @@ onMounted(() => {
     color: #67728f;
 }
 
+/* Estilização do painel de movimentações */
+
 .distribution {
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
     margin-bottom: 0.9rem;
+    height: 7vh;
 }
 
 .distribution-row {
@@ -720,12 +753,12 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     gap: 0.55rem;
-    max-height: 255px;
+    height: 37vh;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
     scrollbar-color: #f6821f #e8edf6;
-}
+}   
 
 .timeline::-webkit-scrollbar {
     width: 8px;
@@ -783,6 +816,8 @@ onMounted(() => {
     font-size: 0.76rem;
 }
 
+/* Estilização do painel de alertas */
+
 .alerts-list {
     list-style: none;
     margin: 0;
@@ -790,7 +825,7 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     gap: 0.55rem;
-    max-height: 310px;
+    height: 45.9vh;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
@@ -867,13 +902,21 @@ onMounted(() => {
     color: #2f4f8f;
 }
 
+/* Estilização geral dos painéis */
+
 .empty {
     margin: 0;
     font-size: 0.84rem;
     color: #6f7b98;
 }
 
+/* Responsividade */
+
 @media (max-width: 1100px) {
+    .dashboard-page {
+        overflow-y: auto;
+    }
+
     .dashboard-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
