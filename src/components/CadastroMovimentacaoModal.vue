@@ -15,7 +15,7 @@
               <label for="tipo-movimentacao" class="label">Tipo de movimentação</label>
               <select id="tipo-movimentacao" class="select" v-model="novoTipoMovimentacao">
                 <option value="Entrega">Entrega</option>
-                <option value="Devolução">Devolução</option>
+                <option value="Devolucao">Devolução</option>
               </select>
             </div>
           </div>
@@ -391,6 +391,23 @@ const aplicarFallbackImagem = (event) => {
   event.target.src = fallbackImage;
 };
 
+const obterDataHoraLocalISO = () => {
+  const agora = new Date();
+  const ano = agora.getFullYear();
+  const mes = String(agora.getMonth() + 1).padStart(2, '0');
+  const dia = String(agora.getDate()).padStart(2, '0');
+  const hora = String(agora.getHours()).padStart(2, '0');
+  const minuto = String(agora.getMinutes()).padStart(2, '0');
+  const segundo = String(agora.getSeconds()).padStart(2, '0');
+  const offsetMinutos = -agora.getTimezoneOffset();
+  const sinal = offsetMinutos >= 0 ? '+' : '-';
+  const offsetAbsoluto = Math.abs(offsetMinutos);
+  const offsetHoras = String(Math.floor(offsetAbsoluto / 60)).padStart(2, '0');
+  const offsetRestante = String(offsetAbsoluto % 60).padStart(2, '0');
+
+  return `${ano}-${mes}-${dia}T${hora}:${minuto}:${segundo}${sinal}${offsetHoras}:${offsetRestante}`;
+};
+
 const inserirMovimentacaoNoSupabase = async (itensValidados) => {
   const usuarioId = session.value?.user?.id;
   const receptorId = receptorSelecionadoId.value;
@@ -404,7 +421,7 @@ const inserirMovimentacaoNoSupabase = async (itensValidados) => {
   }
 
   const payloadMovimentacao = {
-    data: new Date().toISOString(),
+    data: obterDataHoraLocalISO(),
     id_usuario: usuarioId,
     tipo_receptor: novoTipoReceptor.value,
     id_receptor: receptorId,

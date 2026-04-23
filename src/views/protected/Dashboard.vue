@@ -37,6 +37,20 @@ const taxaDevolucaoMes = computed(() => {
 
 const formatarDataHora = (valor) => {
     if (!valor) return "-";
+    if (typeof valor === "string" && /^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+        const [ano, mes, dia] = valor.split("-").map(Number);
+        const dataLocal = new Date(ano, mes - 1, dia, 0, 0, 0);
+        if (Number.isNaN(dataLocal.getTime())) return "-";
+
+        return new Intl.DateTimeFormat("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        }).format(dataLocal);
+    }
+
     const data = new Date(valor);
     if (Number.isNaN(data.getTime())) return "-";
 
@@ -67,6 +81,23 @@ const normalizarTexto = (valor = "") =>
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase()
         .trim();
+
+const chaveDataLocal = (valor) => {
+    if (!valor) return "";
+
+    if (typeof valor === "string" && /^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+        return valor;
+    }
+
+    const data = new Date(valor);
+    if (Number.isNaN(data.getTime())) return "";
+
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, "0");
+    const dia = String(data.getDate()).padStart(2, "0");
+
+    return `${ano}-${mes}-${dia}`;
+};
 
 const diasAteValidade = (validade) => {
     if (!validade) return Number.POSITIVE_INFINITY;
@@ -126,7 +157,6 @@ const carregarResumo = async () => {
     const [
         equipamentosRes,
         estoqueRes,
-        movHojeRes,
         movMesRes,
         alunosCountRes,
         funcionariosCountRes,
@@ -136,11 +166,7 @@ const carregarResumo = async () => {
         supabase.from("estoque").select("quantidade"),
         supabase
             .from("movimentacao")
-            .select("id", { count: "exact", head: true })
-            .gte("data", inicioHoje.toISOString()),
-        supabase
-            .from("movimentacao")
-            .select("tipo_movimentacao")
+            .select("id, data, tipo_movimentacao")
             .gte("data", inicioMes.toISOString()),
         supabase.from("aluno").select("id", { count: "exact", head: true }),
         supabase.from("funcionario").select("id", { count: "exact", head: true }),
@@ -149,7 +175,6 @@ const carregarResumo = async () => {
 
     if (equipamentosRes.error) throw equipamentosRes.error;
     if (estoqueRes.error) throw estoqueRes.error;
-    if (movHojeRes.error) throw movHojeRes.error;
     if (movMesRes.error) throw movMesRes.error;
     if (alunosCountRes.error) throw alunosCountRes.error;
     if (funcionariosCountRes.error) throw funcionariosCountRes.error;
@@ -161,6 +186,10 @@ const carregarResumo = async () => {
     );
 
     const movimentacoesMes = movMesRes.data || [];
+    const hojeChave = chaveDataLocal(inicioHoje);
+    const movimentacoesHoje = movimentacoesMes.filter(
+        (item) => chaveDataLocal(item.data) === hojeChave,
+    ).length;
     const entregasMes = movimentacoesMes.filter(
         (item) => normalizarTexto(item.tipo_movimentacao) === "entrega",
     ).length;
@@ -175,7 +204,7 @@ const carregarResumo = async () => {
             (alunosCountRes.count || 0) +
             (funcionariosCountRes.count || 0) +
             (visitantesCountRes.count || 0),
-        movimentacoesHoje: movHojeRes.count || 0,
+        movimentacoesHoje,
         movimentacoesMes: movimentacoesMes.length,
         entregasMes,
         devolucoesMes,

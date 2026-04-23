@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted } from "vue";
+import { computed, ref, onMounted, onBeforeUnmount } from "vue";
 import { createClient } from "@supabase/supabase-js";
 import CadastroEquipamentoModal from "../../components/CadastroEquipamentoModal.vue";
 import EditarEquipamentoModal from "../../components/EditarEquipamentoModal.vue";
@@ -24,6 +24,7 @@ const modalEdit = ref(false);
 const equipamentoEditando = ref(null);
 
 const modalRegister = ref(false);
+let estoqueRealtimeChannel = null;
 
 const carregarEquipamentos = async () => {
   const { data, error } = await supabase
@@ -113,6 +114,26 @@ const equipamentosFiltrados = computed(() => {
 });
 
 onMounted(carregarEquipamentos);
+
+onMounted(() => {
+  estoqueRealtimeChannel = supabase
+    .channel("estoque-atualizacoes")
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "item_movimentacao" },
+      () => {
+        carregarEquipamentos();
+      },
+    )
+    .subscribe();
+});
+
+onBeforeUnmount(() => {
+  if (estoqueRealtimeChannel) {
+    supabase.removeChannel(estoqueRealtimeChannel);
+    estoqueRealtimeChannel = null;
+  }
+});
 
 function openRegisterModal() {
   modalRegister.value = true;

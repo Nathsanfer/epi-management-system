@@ -74,6 +74,14 @@ const mapearUsuario = (usuario) => ({
 // Função para formatar datas no formato brasileiro (DD/MM/YYYY)
 const formatarDataBR = (valorData) => {
   if (!valorData) return "-";
+
+  if (typeof valorData === "string" && /^\d{4}-\d{2}-\d{2}$/.test(valorData)) {
+    const [ano, mes, dia] = valorData.split("-").map(Number);
+    const dataLocal = new Date(ano, mes - 1, dia);
+    if (Number.isNaN(dataLocal.getTime())) return "-";
+    return new Intl.DateTimeFormat("pt-BR").format(dataLocal);
+  }
+
   const data = new Date(valorData);
   if (Number.isNaN(data.getTime())) return "-";
   return new Intl.DateTimeFormat("pt-BR").format(data);
