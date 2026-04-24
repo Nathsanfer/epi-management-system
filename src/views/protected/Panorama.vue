@@ -512,6 +512,8 @@ const getBadgeClass = (item) => {
   padding-top: 0.5rem;
 }
 
+/* Responsividade */
+
 @media (max-width: 720px) {
   .toolbar {
     flex-direction: column;

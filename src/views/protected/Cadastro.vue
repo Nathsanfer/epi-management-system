@@ -1,10 +1,12 @@
 <script setup>
+// Dependencias principais da tela e integração com o Supabase.
 import { ref, onMounted, computed } from "vue";
 import { useSupabase } from "../../composables/useSupabase";
 import CadastroUsuarioModal from "../../components/CadastroUsuarioModal.vue";
 
 const { supabase, session } = useSupabase();
 
+// Estado da listagem e dos modais da tela.
 const usuarios = ref([]);
 const modalRegister = ref(false);
 const menuAbertoId = ref(null);
@@ -14,15 +16,18 @@ const editFuncaoUsuario = ref("operador");
 const salvandoEdicao = ref(false);
 const erroEdicao = ref("");
 
+// Estado de busca e filtro por função.
 const pesquisa = ref("");
 const filtroAtivo = ref("todos");
 
+// Opcoes exibidas nos filtros da interface.
 const filtros = [
   { label: "Todos", value: "todos" },
   { label: "Administradores", value: "administrador" },
   { label: "Operadores", value: "operador" },
 ];
 
+// Normaliza texto para comparação, pesquisa e filtros.
 const normalizarTexto = (valor) => {
   return String(valor ?? "")
     .normalize("NFD")
@@ -31,6 +36,7 @@ const normalizarTexto = (valor) => {
     .trim();
 };
 
+// Converte a função para o formato visual esperado na interface.
 const formatarFuncao = (valor) => {
   const texto = String(valor ?? "")
     .trim()
@@ -39,6 +45,7 @@ const formatarFuncao = (valor) => {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 };
 
+// Lista filtrada pela busca e pelo tipo de função selecionado.
 const usuariosFiltrados = computed(() => {
   const termo = normalizarTexto(pesquisa.value);
 
@@ -57,6 +64,7 @@ const usuariosFiltrados = computed(() => {
   });
 });
 
+// Retorna o e-mail do usuário, com fallback para a sessão autenticada.
 const obterEmailUsuario = (item) => {
   if (item?.id && item.id === session.value?.user?.id) {
     return session.value?.user?.email ?? item?.email ?? "Nao informado";
@@ -65,6 +73,7 @@ const obterEmailUsuario = (item) => {
   return item?.email ?? "Nao informado";
 };
 
+// Carrega a lista de usuários, priorizando a RPC com e-mail autenticado.
 const carregarUsuarios = async () => {
   const { data: dataComEmailAuth, error: erroComEmailAuth } =
     await supabase.rpc("listar_usuarios_com_email");
@@ -84,22 +93,27 @@ const carregarUsuarios = async () => {
   usuarios.value = data;
 };
 
+// Abre o modal de cadastro de usuário.
 function openRegisterModal() {
   modalRegister.value = true;
 }
 
+// Fecha o modal de cadastro de usuário.
 function closeRegisterModal() {
   modalRegister.value = false;
 }
 
+// Alterna o menu de ações de cada card.
 function toggleMenuOpcoes(id) {
   menuAbertoId.value = menuAbertoId.value === id ? null : id;
 }
 
+// Fecha qualquer menu aberto ao clicar fora.
 function fecharMenuOpcoes() {
   menuAbertoId.value = null;
 }
 
+// Prepara o modal de edição de função com os dados do usuário selecionado.
 function abrirModalEditarFuncao(item) {
   usuarioEditandoId.value = item.id;
   editFuncaoUsuario.value =
@@ -111,12 +125,14 @@ function abrirModalEditarFuncao(item) {
   fecharMenuOpcoes();
 }
 
+// Fecha o modal de edição e limpa o estado local.
 function fecharModalEditarFuncao() {
   modalEditFuncao.value = false;
   usuarioEditandoId.value = null;
   erroEdicao.value = "";
 }
 
+// Persiste a alteração de função do usuário selecionado.
 async function salvarEdicaoFuncao() {
   if (!usuarioEditandoId.value) {
     erroEdicao.value = "Usuário inválido para edição.";
@@ -143,6 +159,7 @@ async function salvarEdicaoFuncao() {
   fecharModalEditarFuncao();
 }
 
+// Remove um usuário após confirmação explícita.
 async function deletarUsuario(item) {
   fecharMenuOpcoes();
 
@@ -164,12 +181,14 @@ async function deletarUsuario(item) {
 }
 
 onMounted(() => {
+  // Carregamento inicial da listagem ao abrir a tela.
   carregarUsuarios();
 });
 </script>
 
 <template>
   <section class="page" @click="fecharMenuOpcoes">
+    <!-- BARRA DE PESQUISA E FILTROS -->
     <div class="toolbar">
       <button class="btn" type="button" @click="openRegisterModal">
         Cadastrar Novo Usuário
@@ -193,6 +212,7 @@ onMounted(() => {
       </div>
     </div>
     <div class="container-scroll">
+      <!-- LISTA DE ITENS FILTRADOS -->
       <ul class="list">
         <li class="element" v-for="item in usuariosFiltrados" :key="item.id">
           <div class="container-left">
@@ -249,6 +269,7 @@ onMounted(() => {
       </ul>
     </div>
 
+    <!-- MODAL DE CADASTRO DE USUÁRIO -->
     <CadastroUsuarioModal
       :open="modalRegister"
       @close="closeRegisterModal"
@@ -258,12 +279,21 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.page {
+  margin-left: 0.4rem;
+  margin-right: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  height: 96%;
+}
+
+/* Estilos para a barra de pesquisa e filtros */
+
 .toolbar {
   display: flex;
   align-items: center;
   gap: 1rem;
-  width: 98%;
-  margin-left: 0.5rem;
 }
 
 .btn {
@@ -324,11 +354,13 @@ onMounted(() => {
   font-weight: 600;
 }
 
+/* Estilos para a lista de itens filtrados */
+
 .container-scroll {
-  margin-top: 1rem;
+  margin-top: 0.6rem;
   width: 98%;
   margin-left: 0.5rem;
-  max-height: 510px;
+  max-height: 74.5vh;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
@@ -688,6 +720,49 @@ onMounted(() => {
 .cadastro_feedback--sucesso {
   color: #047857;
 }
+
+/* Responsividade */
+
+@media (max-width: 568px) {
+  .info-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .filter-btn {
+    padding: 0 0.7rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .element {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.9rem;
+  }
+
+  .container-left {
+    order: 1;
+    border-right: none;
+  }
+
+  .card-options {
+    order: 2;
+    margin-left: 0;
+    align-self: center;
+  }
+
+  .container-right {
+    order: 3;
+    flex: 0 0 100%;
+    width: 100%;
+    margin-top: 0.1rem;
+  }
+}
+
 
 @media (max-width: 850px) {
   .toolbar {
