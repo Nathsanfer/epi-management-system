@@ -211,6 +211,7 @@ onMounted(() => {
         </button>
       </div>
     </div>
+    
     <div class="container-scroll">
       <!-- LISTA DE ITENS FILTRADOS -->
       <ul class="list">
@@ -358,8 +359,6 @@ onMounted(() => {
 
 .container-scroll {
   margin-top: 0.6rem;
-  width: 98%;
-  margin-left: 0.5rem;
   max-height: 74.5vh;
   overflow-y: auto;
   overflow-x: hidden;

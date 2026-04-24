@@ -322,8 +322,6 @@ const getBadgeClass = (item) => {
   font-weight: 600;
 }
 
-/* Estilos para a lista de itens filtrados */
-
 .container-scroll {
   margin-top: 0.6rem;
   max-height: 74.5vh;
