@@ -4,21 +4,25 @@ import { createClient } from "@supabase/supabase-js";
 import CadastroEquipamentoModal from "../../components/CadastroEquipamentoModal.vue";
 import EditarEquipamentoModal from "../../components/EditarEquipamentoModal.vue";
 
+// Instância do Supabase para acesso ao banco de dados
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY,
 );
 
+// ===== ESTADO REATIVO =====
 const equipamentos = ref([]);
 const menuAbertoId = ref(null);
 const pesquisa = ref("");
 const filtroAtivo = ref("todos");
+// Lista de filtros disponíveis por classificação
 
 const filtros = [
   { label: "Todos", value: "todos" },
   { label: "Descartáveis", value: "Descartável" },
   { label: "Reutilizáveis", value: "Reutilizável" },
 ];
+// Controle de modais
 
 const modalEdit = ref(false);
 const equipamentoEditando = ref(null);
@@ -26,6 +30,8 @@ const equipamentoEditando = ref(null);
 const modalRegister = ref(false);
 let estoqueRealtimeChannel = null;
 
+// ===== CARREGAMENTO DE DADOS =====
+// Busca todos os equipamentos com seus níveis de estoque do Supabase
 const carregarEquipamentos = async () => {
   const { data, error } = await supabase
     .from("equipamento")
@@ -39,16 +45,20 @@ const carregarEquipamentos = async () => {
   equipamentos.value = data;
 };
 
+// ===== FUNÇÕES AUXILIARES =====
+// Normaliza texto removendo acentos para comparações de busca case-insensitive
 function normalizarTexto(valor) {
   return String(valor ?? "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim();
+// Extrai quantidade de estoque de forma segura, retornando 0 se não existir
 }
 
 function obterQuantidadeAtual(item) {
   return Number(item?.estoque?.[0]?.quantidade ?? 0);
+// Calcula dias restantes até a validade do certificado
 }
 
 function diasAteValidade(validade) {
@@ -62,6 +72,7 @@ function diasAteValidade(validade) {
 
   const diffMs = dataValidade.getTime() - hoje.getTime();
   return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+// Retorna classe CSS de status: "crítico" (vencido ou abaixo do mínimo), "alerta" ou "ok"
 }
 
 function obterClasseStatusEquipamento(item) {
@@ -84,6 +95,7 @@ function obterClasseStatusEquipamento(item) {
   }
 
   return "element--ok";
+// Retorna texto descritivo do status (Crítico, Atenção ou Estável)
 }
 
 function obterStatusEquipamento(item) {
@@ -100,6 +112,8 @@ function obterStatusEquipamento(item) {
   }
 
   return "Estável";
+// ===== COMPUTED FILTERS =====
+// Filtra equipamentos por classificação e termo de busca
 }
 
 const equipamentosFiltrados = computed(() => {
@@ -129,7 +143,10 @@ const equipamentosFiltrados = computed(() => {
   });
 });
 
+// ===== LIFECYCLE HOOKS =====
+// Carrega equipamentos na montagem do componente
 onMounted(carregarEquipamentos);
+// Configura realtime subscription para atualizar estoque quando movimentações são registradas
 
 onMounted(() => {
   estoqueRealtimeChannel = supabase
@@ -142,6 +159,7 @@ onMounted(() => {
       },
     )
     .subscribe();
+// Limpa subscription realtime ao desmontar
 });
 
 onBeforeUnmount(() => {
@@ -151,20 +169,26 @@ onBeforeUnmount(() => {
   }
 });
 
+// ===== AÇÕES DE MODAL E MENU =====
+// Abre modal de cadastro de novo equipamento
 function openRegisterModal() {
   modalRegister.value = true;
+// Fecha modal de cadastro
 }
 
 function closeRegisterModal() {
   modalRegister.value = false;
+// Alterna visibilidade do menu de opções (editar/deletar)
 }
 
 function toggleMenuOpcoes(id) {
   menuAbertoId.value = menuAbertoId.value === id ? null : id;
+// Fecha menu de opções
 }
 
 function fecharMenuOpcoes() {
   menuAbertoId.value = null;
+// Normaliza classificação: converte para PascalCase
 }
 
 function normalizarClassificacao(valor) {
@@ -176,14 +200,18 @@ function normalizarClassificacao(valor) {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
+// ===== AÇÕES DE EDIÇÃO E EXCLUSÃO =====
+// Abre modal de edição com equipamento selecionado
 function abrirModalEdicao(item) {
   equipamentoEditando.value = item;
   modalEdit.value = true;
   fecharMenuOpcoes();
+// Fecha modal de edição
 }
 
 function fecharModalEdicao() {
   modalEdit.value = false;
+// Deleta equipamento e seu estoque após confirmação
 }
 
 async function deletarEquipamento(item) {
