@@ -24,8 +24,8 @@ const filtros = computed(() => [
   { value: "todos", label: "Todos" },
   { value: "alunos", label: "Alunos" },
   { value: "visitantes", label: "Visitantes" },
-  { value: "funcionarios", label: "Funcionários" }
-])
+  { value: "funcionarios", label: "Funcionários" },
+]);
 
 // Função para carregar os dados de alunos
 const carregarAlunos = async () => {
@@ -36,7 +36,11 @@ const carregarAlunos = async () => {
     return;
   }
 
-  alunos.value = data.map(item => ({ ...item, tipo: 'aluno', uniqueId: `aluno-${item.id}` }));
+  alunos.value = data.map((item) => ({
+    ...item,
+    tipo: "aluno",
+    uniqueId: `aluno-${item.id}`,
+  }));
 };
 
 // Função para carregar os dados de funcionários
@@ -48,7 +52,11 @@ const carregarFuncionarios = async () => {
     return;
   }
 
-  funcionarios.value = data.map(item => ({ ...item, tipo: 'funcionario', uniqueId: `funcionario-${item.id}` }));
+  funcionarios.value = data.map((item) => ({
+    ...item,
+    tipo: "funcionario",
+    uniqueId: `funcionario-${item.id}`,
+  }));
 };
 
 // Função para carregar os dados de visitantes
@@ -60,7 +68,11 @@ const carregarVisitantes = async () => {
     return;
   }
 
-  visitantes.value = data.map(item => ({ ...item, tipo: 'visitante', uniqueId: `visitante-${item.id}` }));
+  visitantes.value = data.map((item) => ({
+    ...item,
+    tipo: "visitante",
+    uniqueId: `visitante-${item.id}`,
+  }));
 };
 
 // Carregamento dos dados ao montar o componente
@@ -127,30 +139,30 @@ const itensFiltrados = computed(() => {
   });
 });
 
-  // Função para obter o rótulo do tipo de item (aluno, visitante ou funcionário)
-  const tipoLabel = (item) => {
-    if (item.tipo === 'aluno') return 'Aluno';
-    if (item.tipo === 'visitante') return 'Visitante';
-    return 'Funcionário';
-  };
+// Função para obter o rótulo do tipo de item (aluno, visitante ou funcionário)
+const tipoLabel = (item) => {
+  if (item.tipo === "aluno") return "Aluno";
+  if (item.tipo === "visitante") return "Visitante";
+  return "Funcionário";
+};
 
-  // Função para obter a classe CSS do badge com base no tipo de item
-  const getBadgeClass = (item) => {
-    if (item.tipo === 'aluno') return 'badge-aluno';
-    if (item.tipo === 'visitante') return 'badge-visitante';
-    return 'badge-funcionario';
-  };
+// Função para obter a classe CSS do badge com base no tipo de item
+const getBadgeClass = (item) => {
+  if (item.tipo === "aluno") return "badge-aluno";
+  if (item.tipo === "visitante") return "badge-visitante";
+  return "badge-funcionario";
+};
 </script>
 
 <template>
   <section class="page">
     <!-- BARRA DE PESQUISA E FILTROS -->
     <div class="toolbar">
-      <input 
-      type="search" 
-      placeholder="Pesquisar por nome, CPF ou registro" 
-      class="search-input"
-      v-model="pesquisa" 
+      <input
+        type="search"
+        placeholder="Pesquisar por nome, CPF ou registro"
+        class="search-input"
+        v-model="pesquisa"
       />
       <div class="filters">
         <button
@@ -171,7 +183,11 @@ const itensFiltrados = computed(() => {
       <ul class="list">
         <li class="element" v-for="item in itensFiltrados" :key="item.uniqueId">
           <div class="container-left">
-            <img class="avatar" :src="item.imagem" :alt="`Avatar de ${item.nome_completo}`" />
+            <img
+              class="avatar"
+              :src="item.imagem"
+              :alt="`Avatar de ${item.nome_completo}`"
+            />
             <p class="badge-tipo" :class="getBadgeClass(item)">
               {{ tipoLabel(item) }}
             </p>
@@ -243,6 +259,14 @@ const itensFiltrados = computed(() => {
 </template>
 
 <style scoped>
+.page {
+  margin-left: 0.4rem;
+  margin-right: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  height: 96%;
+}
 
 /* Estilos para a barra de pesquisa e filtros */
 
@@ -250,8 +274,6 @@ const itensFiltrados = computed(() => {
   display: flex;
   align-items: center;
   gap: 1rem;
-  width: 98%;
-  margin-left: 0.5rem;
 }
 
 .search-input {
@@ -303,10 +325,8 @@ const itensFiltrados = computed(() => {
 /* Estilos para a lista de itens filtrados */
 
 .container-scroll {
-  margin-top: 1rem;
-  width: 98%;
-  margin-left: 0.5rem;
-  max-height: 510px;
+  margin-top: 0.6rem;
+  max-height: 74.5vh;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
