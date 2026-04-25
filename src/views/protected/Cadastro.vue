@@ -362,26 +362,6 @@ onMounted(() => {
   max-height: 74.5vh;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: #f6821f #e4e4e4;
-}
-
-.container-scroll::-webkit-scrollbar {
-  width: 10px;
-}
-
-.container-scroll::-webkit-scrollbar-track {
-  background: #ececec;
-  border-radius: 999px;
-}
-
-.container-scroll::-webkit-scrollbar-thumb {
-  background: #f6821f;
-  border-radius: 999px;
-}
-
-.container-scroll::-webkit-scrollbar-thumb:hover {
-  background: #e27410;
 }
 
 .list {

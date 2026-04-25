@@ -475,26 +475,6 @@ async function deletarEquipamento(item) {
   max-height: 74.5vh;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: #f6821f #ececec8c;
-}
-
-.container-scroll::-webkit-scrollbar {
-  width: 10px;
-}
-
-.container-scroll::-webkit-scrollbar-track {
-  background: #ececec;
-  border-radius: 999px;
-}
-
-.container-scroll::-webkit-scrollbar-thumb {
-  background: #f6821f;
-  border-radius: 999px;
-}
-
-.container-scroll::-webkit-scrollbar-thumb:hover {
-  background: #e27410;
 }
 
 .list {
@@ -741,13 +721,47 @@ async function deletarEquipamento(item) {
 
 /* Responsividade */
 
-@media (max-width: 980px) {
+@media (max-width: 850px) {
   .element-infos-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    margin-top: 1rem;
+  }
+
+  .search-input {
+    padding: 0.6rem 0.9rem;
+  }
+
+  .filters {
+    justify-content: center;
+  }
+
+  .element {
+    gap: 1rem;
+  }
+
+  .container-left {
+    min-width: 100px;
+    width: 100px;
+    padding-right: 0.8rem;
+  }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 568px) {
+  .info-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .filter-btn {
+    padding: 0 0.7rem;
+    font-size: 0.75rem;
+  }
+
   .list {
     display: flex;
     flex-direction: column;

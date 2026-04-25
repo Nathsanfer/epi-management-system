@@ -756,27 +756,7 @@ onMounted(() => {
     height: 37vh;
     overflow-y: auto;
     overflow-x: hidden;
-    scrollbar-width: thin;
-    scrollbar-color: #f6821f #e8edf6;
 }   
-
-.timeline::-webkit-scrollbar {
-    width: 8px;
-}
-
-.timeline::-webkit-scrollbar-track {
-    background: #edf1f8;
-    border-radius: 999px;
-}
-
-.timeline::-webkit-scrollbar-thumb {
-    background: #f6821f;
-    border-radius: 999px;
-}
-
-.timeline::-webkit-scrollbar-thumb:hover {
-    background: #e27410;
-}
 
 .timeline-item {
     border: 1px solid #edf0f7;
@@ -828,26 +808,6 @@ onMounted(() => {
     height: 45.9vh;
     overflow-y: auto;
     overflow-x: hidden;
-    scrollbar-width: thin;
-    scrollbar-color: #f6821f #e8edf6;
-}
-
-.alerts-list::-webkit-scrollbar {
-    width: 8px;
-}
-
-.alerts-list::-webkit-scrollbar-track {
-    background: #edf1f8;
-    border-radius: 999px;
-}
-
-.alerts-list::-webkit-scrollbar-thumb {
-    background: #f6821f;
-    border-radius: 999px;
-}
-
-.alerts-list::-webkit-scrollbar-thumb:hover {
-    background: #e27410;
 }
 
 .alert-item {
