@@ -1,6 +1,6 @@
 <script setup>
 // Importações necessárias
-import { computed, onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
 import { useSupabase } from "../../composables/useSupabase";
 import CadastroMovimentacaoModal from "../../components/CadastroMovimentacaoModal.vue";
 
@@ -39,6 +39,7 @@ const modalCadastroMovimentacao = ref(false);
 const carregandoReceptores = ref(false);
 const carregandoEquipamentos = ref(false);
 const funcaoUsuarioAtual = ref("");
+const comprovanteSelecionado = ref(null);
 
 // Função para normalizar texto, removendo acentos, convertendo para minúsculas e tirando espaços extras
 const normalizarTexto = (valor = "") =>
@@ -85,6 +86,12 @@ const formatarDataBR = (valorData) => {
   const data = new Date(valorData);
   if (Number.isNaN(data.getTime())) return "-";
   return new Intl.DateTimeFormat("pt-BR").format(data);
+};
+
+const gerarRelatorioMovimentacao = async (mov) => {
+  comprovanteSelecionado.value = mov;
+  await nextTick();
+  window.print();
 };
 
 // Função para aplicar a imagem de fallback caso a imagem original do usuário ou receptor não carregue
@@ -389,6 +396,13 @@ onMounted(() => {
                 {{ mov.tipo_movimentacao }}
               </span>
               <span class="date-chip">{{ formatarDataBR(mov.data) }}</span>
+              <button
+                type="button"
+                class="receipt-btn"
+                @click="gerarRelatorioMovimentacao(mov)"
+              >
+                Gerar relatório
+              </button>
             </div>
           </div>
 
@@ -471,10 +485,140 @@ onMounted(() => {
       @close="fecharModalCadastroMovimentacao"
       @created="carregarMovimentacoes"
     />
+
+    <section v-if="comprovanteSelecionado" class="print-receipt">
+      <div class="print-receipt-header">
+        <h1>Relatório de Movimentação de Equipamentos - {{ comprovanteSelecionado.tipo_movimentacao }}</h1>
+        <p>Registrado em {{ formatarDataBR(comprovanteSelecionado.data) }}</p>
+        <hr>
+      </div>
+      <div class="print-receipt-content">
+        <p>Eu, {{comprovanteSelecionado.usuario_nome}}, na função de Operador(a), declaro para os devidos fins que nesta data foi realizada a movimentação de equipamentos para {{comprovanteSelecionado.receptor_nome}}, identificado como {{comprovanteSelecionado.tipo_receptor}}, telefone {{comprovanteSelecionado.receptor_telefone}}, referente aos itens descritos abaixo:</p>
+        <table class="print-receipt-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Equipamento</th>
+              <th>Classificação</th>
+              <th>Quantidade</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="(item, idx) in comprovanteSelecionado.itens"
+              :key="`comprovante-item-${comprovanteSelecionado.id}-${idx}`"
+            >
+              <td>{{ idx + 1 }}</td>
+              <td>{{ item.equipamento_nome }}</td>
+              <td>{{ item.equipamento_classificacao }}</td>
+              <td>{{ item.quantidade }}</td>
+            </tr>
+            <tr v-if="!comprovanteSelecionado.itens?.length">
+              <td colspan="4">Nenhum item registrado para esta movimentação.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>O receptor acima identificado confirma o recebimento dos equipamentos listados, comprometendo-se com a guarda e conservação dos itens recebidos. Nos casos de equipamentos classificados como reutilizáveis, o receptor também se responsabiliza pela devolução dos mesmos, conforme as normas estabelecidas pela instituição.</p>
+
+        <div class="print-signatures">
+          <div class="print-signature-block">
+            <div class="print-signature-line"></div>
+            <p class="print-signature-label">Assinatura do receptor</p>
+          </div>
+
+          <div class="print-signature-block">
+            <div class="print-signature-line"></div>
+            <p class="print-signature-label">Assinatura do usuário</p>
+          </div>
+        </div>
+
+        <p class="print-sign-date">Data da assinatura: ____/____/______</p>
+      </div>
+    </section>
   </section>
 </template>
 
 <style scoped>
+
+.print-receipt-header {
+  margin-top: 2rem;
+}
+
+.print-receipt-header h1 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #1f2d3d;
+}
+
+.print-receipt-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 3rem;
+}
+
+.print-receipt-content p {
+  margin: 0.8rem 0;
+  color: #23314f;
+  line-height: 1.5;
+}
+
+.print-receipt-table {
+  width: 95%;
+  margin: 0 auto;
+  border-collapse: collapse;
+}
+
+.print-receipt-table th,
+.print-receipt-table td {
+  border: 1px solid #d8dfea;
+  padding: 0.45rem 0.5rem;
+  text-align: left;
+  font-size: 0.86rem;
+}
+
+.print-receipt-table th {
+  background: #f3f6fb;
+  color: #1f2d3d;
+}
+
+.print-signatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 6rem;
+}
+
+.print-signature-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.print-signature-line {
+  width: 100%;
+  border-top: 1px solid #23314f;
+  min-height: 1px;
+}
+
+.print-signature-label {
+  margin: 0;
+  color: #23314f;
+  font-size: 0.84rem;
+  text-align: center;
+}
+
+.print-sign-date {
+  margin-top: 1.1rem;
+  text-align: right;
+  font-size: 0.9rem;
+  color: #23314f;
+}
+
+
+
+
 .toolbar {
   display: flex;
   align-items: center;
@@ -566,7 +710,7 @@ onMounted(() => {
 
 .element {
   width: 96%;
-  background: linear-gradient(160deg, #ffffff 0%, #f9fbff 65%, #fff7ef 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
   border: 1px solid #eceef4;
   border-radius: 22px;
   padding: 1.15rem;
@@ -575,8 +719,8 @@ onMounted(() => {
   justify-content: center;
   gap: 1.25rem;
   box-shadow:
-    0 10px 24px rgba(20, 31, 56, 0.08),
-    0 2px 6px rgba(20, 31, 56, 0.05);
+    0 8px 24px rgba(0, 0, 0, 0.04),
+    0 2px 6px rgba(0, 0, 0, 0.04);
   position: relative;
   overflow: hidden;
   transition: all 0.3s ease;
@@ -585,8 +729,8 @@ onMounted(() => {
 .element:hover {
   border-color: #e2d8cd;
   box-shadow:
-    0 16px 36px rgba(20, 31, 56, 0.15),
-    0 4px 12px rgba(20, 31, 56, 0.06);
+    0 12px 36px rgba(0, 0, 0, 0.06),
+    0 4px 10px rgba(0, 0, 0, 0.06);
   transform: translateY(-2px);
 }
 
@@ -639,6 +783,28 @@ onMounted(() => {
   background-color: #f3f5fa;
   color: #3f4960;
   border: 1px solid #e2e6ef;
+}
+
+.receipt-btn {
+  border: 1px solid #f0bf90;
+  background: #fff5ec;
+  color: #a5530c;
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.receipt-btn:hover {
+  background: #ffe9d3;
+  border-color: #eeae72;
+}
+
+.print-receipt {
+  display: none;
 }
 
 .moviment-participants {
@@ -876,6 +1042,24 @@ onMounted(() => {
 
   .movement-meta {
     flex-wrap: wrap;
+  }
+}
+
+@media print {
+  .toolbar,
+  .container-scroll,
+  :deep(.modal-overlay) {
+    display: none !important;
+  }
+
+  .page {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-receipt {
+    display: block;
   }
 }
 </style>

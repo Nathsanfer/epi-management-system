@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { onMounted, ref } from "vue";
 import { useSupabase } from "../../composables/useSupabase";
 
 const { supabase } = useSupabase();
@@ -18,46 +18,6 @@ const resumo = ref({
 });
 
 const equipamentosRelatorio = ref([]);
-const movimentacoesRelatorio = ref([]);
-
-const periodoMesTexto = computed(() => {
-  const agora = new Date();
-  return new Intl.DateTimeFormat("pt-BR", {
-    month: "long",
-    year: "numeric",
-  }).format(agora);
-});
-
-const taxaEntregaMes = computed(() => {
-  if (!resumo.value.movimentacoesMes) return 0;
-  return Math.round((resumo.value.entregasMes / resumo.value.movimentacoesMes) * 100);
-});
-
-const taxaDevolucaoMes = computed(() => {
-  if (!resumo.value.movimentacoesMes) return 0;
-  return Math.round((resumo.value.devolucoesMes / resumo.value.movimentacoesMes) * 100);
-});
-
-function normalizarTexto(valor = "") {
-  return String(valor)
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-}
-
-function chaveDataLocal(valor) {
-  if (!valor) return "";
-  if (typeof valor === "string" && /^\d{4}-\d{2}-\d{2}$/.test(valor)) return valor;
-
-  const data = new Date(valor);
-  if (Number.isNaN(data.getTime())) return "";
-
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
 
 function formatarDataHora(valor) {
   if (!valor) return "-";
@@ -128,44 +88,21 @@ function obterStatusEquipamento(item, quantidadeAtual) {
 }
 
 async function carregarResumo() {
-  const agora = new Date();
-  const inicioHoje = new Date(agora);
-  inicioHoje.setHours(0, 0, 0, 0);
-  const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
-
-  const [equipamentosRes, estoqueRes, movMesRes] = await Promise.all([
+  const [equipamentosRes, estoqueRes] = await Promise.all([
     supabase.from("equipamento").select("id", { count: "exact", head: true }),
     supabase.from("estoque").select("quantidade"),
-    supabase
-      .from("movimentacao")
-      .select("id, data, tipo_movimentacao")
-      .gte("data", inicioMes.toISOString()),
   ]);
 
   if (equipamentosRes.error) throw equipamentosRes.error;
   if (estoqueRes.error) throw estoqueRes.error;
-  if (movMesRes.error) throw movMesRes.error;
 
   const totalItensEstoque = (estoqueRes.data || []).reduce(
     (acc, item) => acc + Number(item?.quantidade ?? 0),
     0,
   );
 
-  const movimentacoesMes = movMesRes.data || [];
-  const hojeChave = chaveDataLocal(inicioHoje);
-
   resumo.value.totalEquipamentos = equipamentosRes.count || 0;
   resumo.value.totalItensEstoque = totalItensEstoque;
-  resumo.value.movimentacoesMes = movimentacoesMes.length;
-  resumo.value.movimentacoesHoje = movimentacoesMes.filter(
-    (item) => chaveDataLocal(item.data) === hojeChave,
-  ).length;
-  resumo.value.entregasMes = movimentacoesMes.filter(
-    (item) => normalizarTexto(item.tipo_movimentacao) === "entrega",
-  ).length;
-  resumo.value.devolucoesMes = movimentacoesMes.filter(
-    (item) => normalizarTexto(item.tipo_movimentacao) === "devolucao",
-  ).length;
 }
 
 async function carregarEquipamentosRelatorio() {
@@ -193,126 +130,6 @@ async function carregarEquipamentosRelatorio() {
   ).length;
 }
 
-async function carregarMovimentacoesRelatorio() {
-  const { data: movimentacoesData, error: movimentacoesError } = await supabase
-    .from("movimentacao")
-    .select("id, data, id_usuario, tipo_receptor, id_receptor, tipo_movimentacao")
-    .order("data", { ascending: false })
-    .limit(12);
-
-  if (movimentacoesError) throw movimentacoesError;
-
-  const listaMovimentacoes = movimentacoesData || [];
-  if (!listaMovimentacoes.length) {
-    movimentacoesRelatorio.value = [];
-    return;
-  }
-
-  const idsMovimentacao = listaMovimentacoes.map((item) => item.id);
-  const idsUsuarios = [
-    ...new Set(listaMovimentacoes.map((item) => item.id_usuario).filter(Boolean)),
-  ];
-
-  const { data: itensMovimentacaoData } = await supabase
-    .from("item_movimentacao")
-    .select("id_movimentacao, quantidade")
-    .in("id_movimentacao", idsMovimentacao);
-
-  let usuariosData = [];
-
-  if (idsUsuarios.length) {
-    const { data: usuariosRpcData, error: usuariosRpcError } = await supabase.rpc(
-      "listar_usuarios_com_email",
-    );
-
-    if (!usuariosRpcError && Array.isArray(usuariosRpcData)) {
-      const idsSet = new Set(idsUsuarios.map((id) => String(id)));
-      usuariosData = usuariosRpcData
-        .filter((usuario) => idsSet.has(String(usuario.id)))
-        .map((usuario) => ({
-          id: usuario.id,
-          nome_completo: usuario.nome_completo || usuario.nome || "Usuário",
-        }));
-    } else {
-      const { data: usuariosFallbackData } = await supabase
-        .from("usuario")
-        .select("id, nome_completo")
-        .in("id", idsUsuarios);
-      usuariosData = usuariosFallbackData || [];
-    }
-  }
-
-  const idsPorTipo = listaMovimentacoes.reduce(
-    (acc, mov) => {
-      const tipo = normalizarTexto(mov.tipo_receptor);
-      if (tipo === "aluno") acc.aluno.add(mov.id_receptor);
-      if (tipo === "funcionario") acc.funcionario.add(mov.id_receptor);
-      if (tipo === "visitante") acc.visitante.add(mov.id_receptor);
-      return acc;
-    },
-    { aluno: new Set(), funcionario: new Set(), visitante: new Set() },
-  );
-
-  const [alunosRes, funcionariosRes, visitantesRes] = await Promise.all([
-    idsPorTipo.aluno.size
-      ? supabase
-          .from("aluno")
-          .select("id, nome_completo, nome")
-          .in("id", [...idsPorTipo.aluno])
-      : Promise.resolve({ data: [] }),
-    idsPorTipo.funcionario.size
-      ? supabase
-          .from("funcionario")
-          .select("id, nome_completo, nome")
-          .in("id", [...idsPorTipo.funcionario])
-      : Promise.resolve({ data: [] }),
-    idsPorTipo.visitante.size
-      ? supabase
-          .from("visitante")
-          .select("id, nome_completo, nome")
-          .in("id", [...idsPorTipo.visitante])
-      : Promise.resolve({ data: [] }),
-  ]);
-
-  const mapaUsuarios = new Map((usuariosData || []).map((item) => [String(item.id), item]));
-  const mapaReceptores = new Map();
-
-  (alunosRes.data || []).forEach((item) => {
-    mapaReceptores.set(`aluno-${item.id}`, item.nome_completo || item.nome || "Receptor");
-  });
-  (funcionariosRes.data || []).forEach((item) => {
-    mapaReceptores.set(
-      `funcionario-${item.id}`,
-      item.nome_completo || item.nome || "Receptor",
-    );
-  });
-  (visitantesRes.data || []).forEach((item) => {
-    mapaReceptores.set(`visitante-${item.id}`, item.nome_completo || item.nome || "Receptor");
-  });
-
-  const totalPorMovimentacao = (itensMovimentacaoData || []).reduce((acc, item) => {
-    const chave = String(item.id_movimentacao);
-    acc[chave] = (acc[chave] || 0) + Number(item.quantidade || 0);
-    return acc;
-  }, {});
-
-  movimentacoesRelatorio.value = listaMovimentacoes.map((mov) => {
-    const usuario = mapaUsuarios.get(String(mov.id_usuario));
-    const nomeReceptor =
-      mapaReceptores.get(`${normalizarTexto(mov.tipo_receptor)}-${mov.id_receptor}`) ||
-      "Receptor";
-
-    return {
-      id: mov.id,
-      data: mov.data,
-      tipo: mov.tipo_movimentacao,
-      usuario: usuario?.nome_completo || "Usuário",
-      receptor: nomeReceptor,
-      totalItens: totalPorMovimentacao[String(mov.id)] || 0,
-    };
-  });
-}
-
 async function carregarRelatorio() {
   carregando.value = true;
   erroRelatorio.value = "";
@@ -321,7 +138,6 @@ async function carregarRelatorio() {
     await Promise.all([
       carregarResumo(),
       carregarEquipamentosRelatorio(),
-      carregarMovimentacoesRelatorio(),
     ]);
   } catch (error) {
     console.error("Erro ao carregar relatório:", error);
@@ -572,63 +388,6 @@ onMounted(() => {
   color: #67728f;
 }
 
-.panel--distribution {
-  background: linear-gradient(150deg, #ffffff 0%, #f6f9ff 100%);
-}
-
-.distribution-row {
-  display: grid;
-  grid-template-columns: 160px 1fr 50px;
-  align-items: center;
-  gap: 0.65rem;
-  margin-bottom: 0.55rem;
-}
-
-.distribution-info {
-  display: flex;
-  flex-direction: column;
-  color: #42506f;
-  font-size: 0.78rem;
-}
-
-.distribution-info strong {
-  color: #1e2d4a;
-  font-size: 1rem;
-}
-
-.bar-track {
-  width: 100%;
-  height: 9px;
-  border-radius: 999px;
-  background: #e8edf7;
-  overflow: hidden;
-}
-
-.bar-fill {
-  height: 100%;
-  border-radius: inherit;
-}
-
-.bar-fill--entrega {
-  background: #4caf50;
-}
-
-.bar-fill--devolucao {
-  background: #2196f3;
-}
-
-.bar-percent {
-  font-size: 0.8rem;
-  color: #516182;
-  text-align: right;
-}
-
-.grid-2 {
-  display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: 0.8rem;
-}
-
 .table-wrap {
   max-height: 45vh;
   overflow-y: auto;
@@ -687,62 +446,6 @@ onMounted(() => {
   background: #e5f7eb;
 }
 
-.timeline {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-}
-
-.timeline-item {
-  display: grid;
-  grid-template-columns: 110px 1fr;
-  gap: 0.65rem;
-  border: 1px solid #eef2fa;
-  border-radius: 14px;
-  padding: 0.62rem;
-  background: #fcfdff;
-}
-
-.timeline-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #e9f3ff;
-  color: #1e5a91;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.18rem 0.5rem;
-  height: fit-content;
-  text-transform: uppercase;
-}
-
-.timeline-badge--entrega {
-  background: #e8f7eb;
-  color: #1f6f41;
-}
-
-.timeline-main {
-  margin: 0;
-  font-size: 0.84rem;
-  color: #253451;
-}
-
-.timeline-meta {
-  margin: 0.2rem 0 0;
-  font-size: 0.76rem;
-  color: #64718c;
-}
-
-.empty {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #66738e;
-}
-
 .print-only {
   display: none;
 }
@@ -767,14 +470,7 @@ onMounted(() => {
     width: 100%;
   }
 
-  .distribution-row {
-    grid-template-columns: 1fr;
-    gap: 0.35rem;
-  }
 
-  .timeline-item {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media print {
