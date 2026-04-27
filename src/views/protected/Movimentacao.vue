@@ -16,7 +16,7 @@ const filtros = [
   { value: "devolucao", label: "Devoluções" },
 ];
 
-// Lista final das movimentações listadas 
+// Lista final das movimentações listadas
 const movimentacoes = ref([]);
 // Listas base para reconstrução das movimentações exibidas
 const movimentacoesBase = ref([]);
@@ -51,7 +51,7 @@ const normalizarTexto = (valor = "") =>
 
 // Função para criar uma chave única para cada receptor, combinando tipo e id
 const chaveReceptor = (tipo, id) =>
-  `${normalizarTexto(tipo)}-${String(id ?? "")}`; 
+  `${normalizarTexto(tipo)}-${String(id ?? "")}`;
 
 // Função para mapear os dados de receptores (alunos, funcionários e visitantes) para um formato unificado
 const mapearReceptor = (item, tipo) => ({
@@ -66,7 +66,8 @@ const mapearReceptor = (item, tipo) => ({
 // Função para mapear os dados dos usuários para um formato unificado
 const mapearUsuario = (usuario) => ({
   id: usuario.id,
-  nome_completo: usuario.nome_completo || usuario.nome || "Usuário não identificado",
+  nome_completo:
+    usuario.nome_completo || usuario.nome || "Usuário não identificado",
   funcao: usuario.funcao || "Operador",
   imagem: usuario.imagem || "",
   email: usuario.email || "",
@@ -142,12 +143,13 @@ const reconstruirMovimentacoesExibidas = () => {
       equipamento,
     ]),
   );
-  
+
   // Agrupa os itens de movimentação por id_movimentacao para facilitar a associação com cada movimentação
   const itensPorMovimentacao = new Map();
 
   // Percorre a tabela de itens de movimentação e agrupa os itens pelo id da movimentação
-  itensMovimentacaoBase.value.forEach((item) => { // Para cada linha da tabela ele executa essa função
+  itensMovimentacaoBase.value.forEach((item) => {
+    // Para cada linha da tabela ele executa essa função
     const chave = String(item.id_movimentacao);
     if (!itensPorMovimentacao.has(chave)) itensPorMovimentacao.set(chave, []);
     itensPorMovimentacao.get(chave).push(item);
@@ -160,16 +162,20 @@ const reconstruirMovimentacoesExibidas = () => {
       chaveReceptor(movimentacao.tipo_receptor, movimentacao.id_receptor), // Busca o receptor da movimentação
     );
 
-    // Para cada movimentação, busca os itens associados 
-    const itens = (itensPorMovimentacao.get(String(movimentacao.id)) || []).map((item) => {
-      const equipamento = mapaEquipamentos.get(String(item.id_equipamento)); // Busca os equipamentos
+    // Para cada movimentação, busca os itens associados
+    const itens = (itensPorMovimentacao.get(String(movimentacao.id)) || []).map(
+      (item) => {
+        const equipamento = mapaEquipamentos.get(String(item.id_equipamento)); // Busca os equipamentos
 
-      return {
-        equipamento_nome: equipamento?.nome || equipamento?.descricao || "Equipamento",
-        equipamento_classificacao: equipamento?.classificacao || "Sem classificação",
-        quantidade: item.quantidade,
-      };
-    });
+        return {
+          equipamento_nome:
+            equipamento?.nome || equipamento?.descricao || "Equipamento",
+          equipamento_classificacao:
+            equipamento?.classificacao || "Sem classificação",
+          quantidade: item.quantidade,
+        };
+      },
+    );
 
     return {
       id: movimentacao.id,
@@ -177,11 +183,14 @@ const reconstruirMovimentacoesExibidas = () => {
       tipo_movimentacao: movimentacao.tipo_movimentacao,
       tipo_receptor: movimentacao.tipo_receptor,
       id_receptor: movimentacao.id_receptor,
-      usuario_nome: usuario?.nome_completo || usuario?.nome || "Usuário não identificado",
+      usuario_nome:
+        usuario?.nome_completo || usuario?.nome || "Usuário não identificado",
       usuario_funcao: usuario?.funcao || "Operador",
       usuario_imagem: usuario?.imagem || "",
-      receptor_nome: receptor?.nome_completo || movimentacao.receptor_nome || "",
-      receptor_telefone: receptor?.telefone || movimentacao.receptor_telefone || "",
+      receptor_nome:
+        receptor?.nome_completo || movimentacao.receptor_nome || "",
+      receptor_telefone:
+        receptor?.telefone || movimentacao.receptor_telefone || "",
       receptor_imagem: receptor?.imagem || movimentacao.receptor_imagem || "",
       itens,
     };
@@ -208,7 +217,9 @@ const carregarReceptores = async () => {
       return [];
     }
 
-    return (resposta.data || []).map((item) => mapearReceptor(item, fonte.tipo));
+    return (resposta.data || []).map((item) =>
+      mapearReceptor(item, fonte.tipo),
+    );
   });
 
   reconstruirMovimentacoesExibidas();
@@ -242,9 +253,13 @@ const carregarMovimentacoes = async () => {
   ] = await Promise.all([
     supabase
       .from("movimentacao")
-      .select("id, data, id_usuario, tipo_receptor, id_receptor, tipo_movimentacao")
+      .select(
+        "id, data, id_usuario, tipo_receptor, id_receptor, tipo_movimentacao",
+      )
       .order("data", { ascending: false }),
-    supabase.from("item_movimentacao").select("id_movimentacao, id_equipamento, quantidade"),
+    supabase
+      .from("item_movimentacao")
+      .select("id_movimentacao, id_equipamento, quantidade"),
   ]);
 
   if (erroMovimentacoes) {
@@ -265,9 +280,8 @@ const carregarMovimentacoes = async () => {
 };
 
 const carregarUsuariosMovimentacao = async () => {
-  const { data: dataComEmailAuth, error: erroComEmailAuth } = await supabase.rpc(
-    "listar_usuarios_com_email",
-  );
+  const { data: dataComEmailAuth, error: erroComEmailAuth } =
+    await supabase.rpc("listar_usuarios_com_email");
 
   if (!erroComEmailAuth && Array.isArray(dataComEmailAuth)) {
     usuariosMovimentacao.value = dataComEmailAuth.map(mapearUsuario);
@@ -316,7 +330,8 @@ const carregarFuncaoUsuarioAtual = async () => {
     return;
   }
 
-  funcaoUsuarioAtual.value = data?.funcao || session.value?.user?.user_metadata?.funcao || "";
+  funcaoUsuarioAtual.value =
+    data?.funcao || session.value?.user?.user_metadata?.funcao || "";
 };
 
 const movimentacoesFiltradas = computed(() => {
@@ -397,6 +412,7 @@ onMounted(() => {
               </span>
               <span class="date-chip">{{ formatarDataBR(mov.data) }}</span>
               <button
+                v-if="normalizarTexto(mov.tipo_movimentacao) === 'entrega'"
                 type="button"
                 class="receipt-btn"
                 @click="gerarRelatorioMovimentacao(mov)"
@@ -488,12 +504,23 @@ onMounted(() => {
 
     <section v-if="comprovanteSelecionado" class="print-receipt">
       <div class="print-receipt-header">
-        <h1>Relatório de Movimentação de Equipamentos - {{ comprovanteSelecionado.tipo_movimentacao }}</h1>
+        <h1>
+          Relatório de Movimentação de Equipamentos -
+          {{ comprovanteSelecionado.tipo_movimentacao }}
+        </h1>
         <p>Registrado em {{ formatarDataBR(comprovanteSelecionado.data) }}</p>
-        <hr>
+        <hr />
       </div>
       <div class="print-receipt-content">
-        <p>Eu, {{comprovanteSelecionado.usuario_nome}}, na função de Operador(a), declaro para os devidos fins que nesta data foi realizada a movimentação de equipamentos para {{comprovanteSelecionado.receptor_nome}}, identificado como {{comprovanteSelecionado.tipo_receptor}}, telefone {{comprovanteSelecionado.receptor_telefone}}, referente aos itens descritos abaixo:</p>
+        <p>
+          Eu, {{ comprovanteSelecionado.usuario_nome }}, na função de
+          Operador(a), declaro para os devidos fins que nesta data foi realizada
+          a movimentação de equipamentos para
+          {{ comprovanteSelecionado.receptor_nome }}, identificado como
+          {{ comprovanteSelecionado.tipo_receptor }}, telefone
+          {{ comprovanteSelecionado.receptor_telefone }}, referente aos itens
+          descritos abaixo:
+        </p>
         <table class="print-receipt-table">
           <thead>
             <tr>
@@ -501,24 +528,31 @@ onMounted(() => {
               <th>Equipamento</th>
               <th>Classificação</th>
               <th>Quantidade</th>
+              <th>Devolvido</th>
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="(item, idx) in comprovanteSelecionado.itens"
-              :key="`comprovante-item-${comprovanteSelecionado.id}-${idx}`"
-            >
+            <tr v-for="(item, idx) in comprovanteSelecionado.itens">
               <td>{{ idx + 1 }}</td>
               <td>{{ item.equipamento_nome }}</td>
               <td>{{ item.equipamento_classificacao }}</td>
               <td>{{ item.quantidade }}</td>
+              <td class="print-check-cell"></td>
             </tr>
             <tr v-if="!comprovanteSelecionado.itens?.length">
-              <td colspan="4">Nenhum item registrado para esta movimentação.</td>
+              <td colspan="5">
+                Nenhum item registrado para esta movimentação.
+              </td>
             </tr>
           </tbody>
         </table>
-        <p>O receptor acima identificado confirma o recebimento dos equipamentos listados, comprometendo-se com a guarda e conservação dos itens recebidos. Nos casos de equipamentos classificados como reutilizáveis, o receptor também se responsabiliza pela devolução dos mesmos, conforme as normas estabelecidas pela instituição.</p>
+        <p>
+          O receptor acima identificado confirma o recebimento dos equipamentos
+          listados, comprometendo-se com a guarda e conservação dos itens
+          recebidos. Nos casos de equipamentos classificados como reutilizáveis,
+          o receptor também se responsabiliza pela devolução dos mesmos,
+          conforme as normas estabelecidas pela instituição.
+        </p>
 
         <div class="print-signatures">
           <div class="print-signature-block">
@@ -533,13 +567,28 @@ onMounted(() => {
         </div>
 
         <p class="print-sign-date">Data da assinatura: ____/____/______</p>
+
+        <div class="print-devolution-section">
+          <h2>Registro da devolução</h2>
+          <div class="print-data-devolution">
+            <div class="print-devolution-block">
+              <div class="print-signature-line"></div>
+              <p class="print-signature-label">Nome do Responsável</p>
+            </div>
+
+            <div class="print-devolution-block">
+              <div class="print-signature-line"></div>
+              <p class="print-signature-label">Assinatura do Responsável</p>
+            </div>
+          </div>
+          <p class="print-sign-date">Data da devolução: ____/____/______</p>
+        </div>
       </div>
     </section>
   </section>
 </template>
 
 <style scoped>
-
 .print-receipt-header {
   margin-top: 2rem;
 }
@@ -554,7 +603,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  margin-top: 3rem;
+  margin-top: 2rem;
 }
 
 .print-receipt-content p {
@@ -582,14 +631,27 @@ onMounted(() => {
   color: #1f2d3d;
 }
 
+.print-check-cell {
+  min-width: 72px;
+}
+
 .print-signatures {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
-  margin-top: 6rem;
+  margin-top: 3rem;
 }
 
-.print-signature-block {
+.print-data-devolution {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 5rem;
+  margin-bottom: 3rem;
+}
+
+.print-signature-block,
+.print-devolution-block {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -616,8 +678,23 @@ onMounted(() => {
   color: #23314f;
 }
 
+.print-devolution-section {
+  margin-top: 1.2rem;
+  border-top: 1px dashed #c5cedf;
+  padding-top: 0.8rem;
+}
 
+.print-devolution-section h2 {
+  margin: 0 0 1.5rem;
+  font-size: 1.1rem;
+  color: #1f2d3d;
+}
 
+.print-devolution-section p {
+  margin: 0.35rem 0;
+  font-size: 0.88rem;
+  color: #23314f;
+}
 
 .toolbar {
   display: flex;
