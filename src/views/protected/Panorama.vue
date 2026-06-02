@@ -260,16 +260,15 @@ const getBadgeClass = (item) => {
 
 <style scoped>
 .page {
-  margin-left: 0.4rem;
+  margin-left: 1rem;
   margin-right: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-  height: 96%;
+  height: 100%;
 }
 
 /* Estilos para a barra de pesquisa e filtros */
-
 .toolbar {
   display: flex;
   align-items: center;
@@ -324,7 +323,7 @@ const getBadgeClass = (item) => {
 
 .container-scroll {
   margin-top: 0.6rem;
-  max-height: 74.5vh;
+  max-height: 78vh;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -340,14 +339,15 @@ const getBadgeClass = (item) => {
 }
 
 .element {
-  width: 96%;
+  width: 100%;
+  box-sizing: border-box;
   background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
   border: 1px solid #e0e0e0;
   border-radius: 20px;
-  padding: 0.85rem;
+  padding: 1rem;
   display: flex;
   flex-direction: row;
-  gap: 1.8rem;
+  gap: 1.5rem;
   box-shadow:
     0 8px 24px rgba(0, 0, 0, 0.04),
     0 2px 6px rgba(0, 0, 0, 0.04);
@@ -371,11 +371,11 @@ const getBadgeClass = (item) => {
   justify-content: center;
   gap: 0.6rem;
   flex-shrink: 0;
-  min-width: 130px;
-  width: 130px;
+  min-width: 120px;
+  width: 120px;
   padding: 0.3rem 0;
   border-right: 1px solid #f0f0f0;
-  padding-right: 1.2rem;
+  padding-right: 1rem;
 }
 
 .container-right {
@@ -404,7 +404,7 @@ const getBadgeClass = (item) => {
 }
 
 .name-value {
-  font-size: 1.45rem;
+  font-size: 1.35rem;
   font-weight: 800;
   color: #0f0f0f;
   margin: 0;
@@ -490,56 +490,97 @@ const getBadgeClass = (item) => {
   padding-top: 0.5rem;
 }
 
-/* Responsividade */
+/* ==========================================================================
+   MEDIA QUERIES (RESPONSIVIDADE)
+   ========================================================================== */
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .toolbar {
     flex-direction: column;
     align-items: stretch;
-    margin-top: 1rem;
+    gap: 0.8rem;
   }
 
   .search-input {
-    padding: 0.6rem 0.9rem;
+    width: 100%;
+    min-width: 100%;
+    padding: 0.45rem 0.9rem;
   }
 
   .filters {
-    justify-content: center;
+    justify-content: flex-start;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 0.4rem;
+    /* Esconde a barra de rolagem feia em navegadores baseados em Webkit */
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .filters::-webkit-scrollbar {
+    display: none;
   }
 
+  .filter-btn {
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 580px) {
   .element {
+    flex-direction: column;
     gap: 1rem;
   }
 
   .container-left {
-    min-width: 100px;
-    width: 100px;
-    padding-right: 0.8rem;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    min-width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #f0f0f0;
+    padding-right: 0;
+    padding-bottom: 0.8rem;
+  }
+
+  .avatar {
+    width: 60px;
+    height: 60px;
+  }
+
+  .card-content, .card-extra {
+    grid-template-columns: repeat(2, 1fr); /* Reduz para 2 colunas no mobile intermediário */
   }
 }
 
-@media (max-width: 490px) {
-  .filter-btn {
-    padding: 0.4rem 0.7rem;
-    height: auto;
-    font-size: 0.7rem;
+/* Ajustes cirúrgicos para telas de 480px ou menores */
+@media (max-width: 480px) {
+  .page {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+  }
+
+  .name-value {
+    font-size: 1.2rem;
+  }
+
+  .container-scroll {
+    max-height: none; /* Deixa o scroll fluir naturalmente pela página */
+    overflow-y: visible;
+  }
+
+  .list {
+    gap: 1.2rem; /* Aumenta o espaçamento entre os itens para melhor toque */
+  }
+
+  .card-content, .card-extra {
+    grid-template-columns: 1fr; /* Transforma dados em linhas completas evitando esmagamento */
     gap: 0.5rem;
   }
 
-  .element {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .container-left {
-    flex-direction: row;
-    gap: 0.8rem;
-    padding-right: 0;
-    border-right: none;
-    border-bottom: 1px solid #f0f0f0;
-    padding-bottom: 1rem;
-    width: 100%;
+  .data-block {
+    padding: 0.55rem; /* Melhora a área de toque e leitura */
   }
 }
 </style>

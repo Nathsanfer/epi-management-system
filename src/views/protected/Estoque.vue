@@ -35,7 +35,9 @@ let estoqueRealtimeChannel = null;
 const carregarEquipamentos = async () => {
   const { data, error } = await supabase
     .from("equipamento")
-    .select("*, estoque(quantidade)");
+    .select("*, estoque(quantidade)")
+    .order("nome", { ascending: true })
+    .eq("ativo", true);             
 
   if (error) {
     console.error("Erro ao carregar equipamentos:", error);
@@ -214,32 +216,32 @@ function fecharModalEdicao() {
 // Deleta equipamento e seu estoque após confirmação
 }
 
-async function deletarEquipamento(item) {
+async function inativarEquipamento(item) {
   fecharMenuOpcoes();
 
   const confirmado = window.confirm(
-    `Tem certeza que deseja deletar o equipamento "${item.nome}"?`,
+    `Tem certeza que deseja inativar o equipamento "${item.nome}"?`,
   );
 
   if (!confirmado) return;
 
   const { error: estoqueError } = await supabase
     .from("estoque")
-    .delete()
+    .update({ ativo: false })
     .eq("id_equipamento", item.id);
 
   if (estoqueError) {
-    window.alert(`Erro ao deletar estoque: ${estoqueError.message}`);
+    window.alert(`Erro ao inativar estoque: ${estoqueError.message}`);
     return;
   }
 
   const { error: equipamentoError } = await supabase
     .from("equipamento")
-    .delete()
+    .update({ ativo: false })
     .eq("id", item.id);
 
   if (equipamentoError) {
-    window.alert(`Erro ao deletar equipamento: ${equipamentoError.message}`);
+    window.alert(`Erro ao inativar equipamento: ${equipamentoError.message}`);
     return;
   }
 
@@ -358,9 +360,9 @@ async function deletarEquipamento(item) {
                 <button
                   class="options-menu-btn options-menu-btn--delete"
                   type="button"
-                  @click="deletarEquipamento(item)"
+                  @click="inativarEquipamento(item)"
                 >
-                  Deletar equipamento
+                  Inativar equipamento
                 </button>
               </div>
             </div>
@@ -397,7 +399,6 @@ async function deletarEquipamento(item) {
 }
 
 /* Estilos para a barra de pesquisa e filtros */
-
 .toolbar {
   display: flex;
   align-items: center;
@@ -469,7 +470,6 @@ async function deletarEquipamento(item) {
 }
 
 /* Estilos para a lista de itens filtrados */
-
 .container-scroll {
   margin-top: 0.6rem;
   max-height: 74.5vh;
@@ -521,7 +521,7 @@ async function deletarEquipamento(item) {
   bottom: 0;
   width: 20px;
   background-color: var(--status-color);
-  border-radius: 0 30px 30px 0;
+  border-radius: 0 22px 22px 0;
 }
 
 .element--critico {
@@ -688,6 +688,7 @@ async function deletarEquipamento(item) {
   right: calc(100% + 0.5rem);
   transform: translateY(-50%);
   min-width: 170px;
+  margin-top: 2rem;
   background: #ffffff;
   border: 1px solid #d8d8d8;
   border-radius: 10px;
@@ -719,7 +720,9 @@ async function deletarEquipamento(item) {
   background: #fff0f0;
 }
 
-/* Responsividade */
+/* ==========================================================================
+   MEDIA QUERIES (RESPONSIVIDADE)
+   ========================================================================== */
 
 @media (max-width: 850px) {
   .element-infos-grid {
@@ -734,6 +737,7 @@ async function deletarEquipamento(item) {
 
   .search-input {
     padding: 0.6rem 0.9rem;
+    width: 100%;
   }
 
   .filters {
@@ -743,33 +747,58 @@ async function deletarEquipamento(item) {
   .element {
     gap: 1rem;
   }
-
-  .container-left {
-    min-width: 100px;
-    width: 100px;
-    padding-right: 0.8rem;
-  }
 }
 
+/* Ajustes específicos e refinados para 568px (Mobile Landscape / Telas Pequenas) */
 @media (max-width: 568px) {
-  .info-list {
-    display: flex;
-    flex-direction: column;
+  .page {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+  }
+
+  .btn {
+    font-size: 0.9rem;
+    padding: 0 1rem;
+    width: 100%;
+  }
+
+  /* Filtros deslizantes inteligentes (estilo app nativo) */
+  .filters {
+    justify-content: flex-start;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 0.3rem;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .filters::-webkit-scrollbar {
+    display: none; /* Oculta barra de scroll feia */
   }
 
   .filter-btn {
-    padding: 0 0.7rem;
-    font-size: 0.75rem;
+    flex-shrink: 0;
+    padding: 0 0.8rem;
+    font-size: 0.8rem;
+    height: 38px;
+  }
+
+  /* Correção crítica do Scroll */
+  .container-scroll {
+    max-height: none;
+    overflow-y: hidden; /* Mantém a rolagem ativa verticalmente */
+    overflow-x: hidden;
   }
 
   .list {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    align-items: stretch;
+    width: 100%;
   }
 
   .element {
-    width: 95%;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.9rem;
   }
 
   .element-main {
@@ -777,21 +806,53 @@ async function deletarEquipamento(item) {
   }
 
   .element::after {
-    width: 14px;
+    width: 12px;
+    border-radius: 0 22px 22px 0;
   }
 
   .element-header {
-    padding-right: 2rem;
     align-items: flex-start;
+    padding-right: 1.8rem; /* Abre espaço para o botão de três pontos */
   }
 
   .img {
-    width: 72px;
-    height: 72px;
+    width: 68px;
+    height: 68px;
+    border-radius: 12px;
   }
 
+  .equipamento_nome {
+    font-size: 1rem;
+  }
+
+  /* Mantém 2 colunas organizadas ao invés de esticar tudo em 1 só */
   .element-infos-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.45rem;
+  }
+
+  .info-card {
+    padding: 0.45rem;
+  }
+
+  .label {
+    font-size: 0.65rem;
+  }
+
+  .info {
+    font-size: 0.8rem;
+  }
+
+  .info--strong {
+    font-size: 1.05rem;
+  }
+
+  /* Correção do Menu Dropdown para não sumir da tela */
+  .options-menu {
+    top: 100%;
+    right: 0;
+    transform: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 }
 

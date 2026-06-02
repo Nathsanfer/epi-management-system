@@ -20,9 +20,11 @@ const tema = ref("claro");
 const notificarEstoque = ref(true);
 const notificarValidade = ref(true);
 const notificarMovimentacoes = ref(false);
-const salvandoSenha = ref(false);
-const mensagemSenha = ref("");
-const tipoMensagemSenha = ref("");
+
+// Mudança de escopo de "senha" para "perfil geral"
+const salvandoPerfil = ref(false);
+const mensagemPerfil = ref("");
+const tipoMensagemPerfil = ref("");
 
 const carregarUsuarioLogado = async () => {
   const userId = session.value?.user?.id;
@@ -41,44 +43,94 @@ const carregarUsuarioLogado = async () => {
 
   usuarioLogado.value = data;
   nomeExibicao.value = data?.nome_completo ?? "";
-  email.value = data?.email ?? session.value?.user?.email ?? "";
+  // Busca o e-mail prioritariamente da tabela auth (sessão atual)
+  email.value = session.value?.user?.email ?? "";
   funcaoUsuario.value = (data?.funcao ?? "").toLowerCase().trim();
   fotoPerfil.value = data?.imagem ?? fotoPadrao;
 };
 
-const alterarSenha = async () => {
-  mensagemSenha.value = "";
-  tipoMensagemSenha.value = "";
+const salvarPerfil = async () => {
+  mensagemPerfil.value = "";
+  tipoMensagemPerfil.value = "";
 
-  if (!senha.value?.trim()) {
-    mensagemSenha.value = "Digite uma nova senha para continuar.";
-    tipoMensagemSenha.value = "erro";
+  const userId = session.value?.user?.id;
+  if (!userId) {
+    mensagemPerfil.value = "Sessão inválida ou expirada.";
+    tipoMensagemPerfil.value = "erro";
     return;
   }
 
-  if (senha.value.trim().length < 6) {
-    mensagemSenha.value = "A senha precisa ter pelo menos 6 caracteres.";
-    tipoMensagemSenha.value = "erro";
+  // Validação básica do nome completo
+  if (!nomeExibicao.value?.trim()) {
+    mensagemPerfil.value = "O campo Nome não pode ficar vazio.";
+    tipoMensagemPerfil.value = "erro";
     return;
   }
 
-  salvandoSenha.value = true;
-
-  const { error } = await supabase.auth.updateUser({
-    password: senha.value,
-  });
-
-  salvandoSenha.value = false;
-
-  if (error) {
-    mensagemSenha.value = error.message || "Nao foi possivel alterar a senha.";
-    tipoMensagemSenha.value = "erro";
+  // Validação básica do e-mail
+  if (!email.value?.trim()) {
+    mensagemPerfil.value = "O campo E-mail não pode ficar vazio.";
+    tipoMensagemPerfil.value = "erro";
     return;
   }
 
-  senha.value = "";
-  mensagemSenha.value = "Senha alterada com sucesso.";
-  tipoMensagemSenha.value = "sucesso";
+  // Validação opcional da senha (só valida se o usuário digitar algo)
+  if (senha.value?.trim() && senha.value.trim().length < 6) {
+    mensagemPerfil.value = "A nova senha precisa ter pelo menos 6 caracteres.";
+    tipoMensagemPerfil.value = "erro";
+    return;
+  }
+
+  salvandoPerfil.value = true;
+
+  try {
+    // 1. Atualizar dados cadastrais públicos na tabela 'usuario' (Nome)
+    const { error: errorTabela } = await supabase
+      .from("usuario")
+      .update({
+        nome_completo: nomeExibicao.value.trim(),
+      })
+      .eq("id", userId);
+
+    if (errorTabela) throw new Error(`Erro nos dados públicos: ${errorTabela.message}`);
+
+    // 2. Preparar os dados de autenticação (E-mail e/ou Senha)
+    const dadosAutenticacao = {};
+    
+    // Se o e-mail digitado for diferente do e-mail atual da sessão, agenda a troca
+    if (email.value.trim() !== session.value?.user?.email) {
+      dadosAutenticacao.email = email.value.trim();
+    }
+    
+    // Se o usuário preencheu uma nova senha, adiciona na requisição
+    if (senha.value?.trim()) {
+      dadosAutenticacao.password = senha.value;
+    }
+
+    // Só chama o update do Auth se houver e-mail ou senha novos para salvar
+    if (Object.keys(dadosAutenticacao).length > 0) {
+      const { error: errorAuth } = await supabase.auth.updateUser(dadosAutenticacao);
+      if (errorAuth) throw errorAuth;
+    }
+
+    // Sucesso geral
+    senha.value = ""; // limpa o campo de senha por segurança
+    mensagemPerfil.value = "Alterações salvas com sucesso!";
+    
+    // Se mudou o e-mail, o Supabase envia confirmações por padrão
+    if (dadosAutenticacao.email) {
+      mensagemPerfil.value += " Verifique as caixas de entrada dos e-mails para confirmar a alteração.";
+    }
+    
+    tipoMensagemPerfil.value = "sucesso";
+    await carregarUsuarioLogado();
+
+  } catch (err) {
+    mensagemPerfil.value = err.message || "Não foi possível salvar as alterações.";
+    tipoMensagemPerfil.value = "erro";
+  } finally {
+    salvandoPerfil.value = false;
+  }
 };
 
 watch(
@@ -90,7 +142,6 @@ watch(
   },
   { immediate: true }
 );
-
 </script>
 
 <template>
@@ -132,11 +183,11 @@ watch(
               </label>
 
               <p
-                v-if="mensagemSenha"
+                v-if="mensagemPerfil"
                 class="password-feedback"
-                :class="tipoMensagemSenha === 'erro' ? 'password-feedback--erro' : 'password-feedback--sucesso'"
+                :class="tipoMensagemPerfil === 'erro' ? 'password-feedback--erro' : 'password-feedback--sucesso'"
               >
-                {{ mensagemSenha }}
+                {{ mensagemPerfil }}
               </p>
 
             </div>
@@ -144,10 +195,10 @@ watch(
             <button
               class="btn-save btn-save--profile"
               type="button"
-              :disabled="salvandoSenha"
-              @click="alterarSenha"
+              :disabled="salvandoPerfil"
+              @click="salvarPerfil"
             >
-              {{ salvandoSenha ? "Salvando..." : "Salvar alterações" }}
+              {{ salvandoPerfil ? "Salvando..." : "Salvar alterações" }}
             </button>
           </div>
       </section>

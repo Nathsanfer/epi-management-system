@@ -246,22 +246,22 @@ onMounted(() => {
 
 <style scoped>
 .report-page {
-  margin-left: 0.4rem;
-  margin-right: 1rem;
+  padding: 0.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-  height: 96%;
+  gap: 1rem;
+  min-height: 100%;
+  box-sizing: border-box;
 }
 
 .hero {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 1.5rem;
   border-radius: 24px;
-  padding: 1.1rem 1.2rem;
-  background-color: var(--highlights);
+  padding: 1.5rem;
+  background-color: var(--highlights, #f6821f);
   box-shadow: 0 10px 34px rgba(216, 99, 11, 0.28);
   color: #fff;
 }
@@ -275,9 +275,9 @@ onMounted(() => {
 }
 
 .hero h1 {
-  margin: 0.2rem 0 0.3rem;
+  margin: 0.4rem 0;
   font-family: var(--font-secondary);
-  font-size: clamp(1.15rem, 2.6vw, 1.6rem);
+  font-size: clamp(1.2rem, 4vw, 1.75rem);
   line-height: 1.25;
 }
 
@@ -285,13 +285,13 @@ onMounted(() => {
   margin: 0;
   font-size: 0.95rem;
   opacity: 0.93;
+  max-width: 600px;
 }
 
 .hero-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
-  justify-content: flex-end;
 }
 
 .btn {
@@ -300,7 +300,8 @@ onMounted(() => {
   color: #fff;
   font-family: var(--font-primary);
   border-radius: 999px;
-  padding: 0.58rem 1rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: 0.2s ease;
   white-space: nowrap;
@@ -318,6 +319,7 @@ onMounted(() => {
   margin: 0;
   color: #4c5670;
   font-size: 0.92rem;
+  padding: 0.5rem;
 }
 
 .feedback--erro {
@@ -327,34 +329,34 @@ onMounted(() => {
 .content {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-  padding-right: 0.2rem;
+  gap: 1rem;
 }
 
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.8rem;
+  gap: 1rem;
 }
 
 .metric-card {
   border-radius: 18px;
   border: 1px solid #ebeef6;
   background: linear-gradient(145deg, #ffffff 0%, #f8faff 100%);
-  padding: 0.65rem;
-  box-shadow: 0 8px 18px rgba(31, 47, 80, 0.08);
+  padding: 1rem;
+  box-shadow: 0 8px 18px rgba(31, 47, 80, 0.05);
 }
 
 .metric-label {
   margin: 0;
   color: #6a738d;
-  font-size: 0.74rem;
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 
 .metric-value {
-  margin: 0.25rem 0 0;
+  margin: 0.4rem 0 0;
   color: #1f2d4a;
-  font-size: 1.35rem;
+  font-size: 1.6rem;
   font-weight: 700;
   line-height: 1;
 }
@@ -363,52 +365,52 @@ onMounted(() => {
   border-radius: 20px;
   border: 1px solid #e8ecf5;
   background: #ffffff;
-  box-shadow: 0 10px 22px rgba(30, 44, 73, 0.08);
-  padding: 1rem;
-  height: 50vh;
+  box-shadow: 0 10px 22px rgba(30, 44, 73, 0.05);
+  padding: 1.25rem;
+  box-sizing: border-box;
+  max-height: 74.5vh;
 }
 
 .panel-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
   gap: 0.6rem;
-  margin-bottom: 0.8rem;
+  margin-bottom: 1rem;
 }
 
 .panel-header h2 {
   margin: 0;
-  font-size: 1.02rem;
+  font-size: 1.1rem;
   color: #1e2d4a;
 }
 
 .panel-header p {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: #67728f;
 }
 
 .table-wrap {
-  max-height: 45vh;
+  max-height: 43.5vh;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto; 
   border-radius: 14px;
   border: 1px solid #edf1f7;
+  -webkit-overflow-scrolling: touch; 
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.84rem;
-  overflow-y: auto;
-  overflow-x: hidden;
+  font-size: 0.88rem;
 }
 
 .table th,
 .table td {
   text-align: left;
   border-bottom: 1px solid #edf1f7;
-  padding: 0.55rem 0.35rem;
+  padding: 0.75rem 0.8rem;
   color: #2c3a56;
 }
 
@@ -416,18 +418,28 @@ onMounted(() => {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: #fff;
-  font-size: 0.74rem;
+  background: #f8fafc;
+  font-size: 0.75rem;
   color: #6b7895;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.td-main {
+  font-weight: 600;
+  min-width: 160px; /* Garante espaço para o nome do item */
+}
+
+.text-nowrap {
+  white-space: nowrap;
 }
 
 .chip {
   display: inline-flex;
-  padding: 0.18rem 0.52rem;
+  padding: 0.25rem 0.6rem;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
@@ -450,29 +462,56 @@ onMounted(() => {
   display: none;
 }
 
+/* ==========================================================================
+   MEDIA QUERIES (Ajustes de Telas)
+   ========================================================================== */
+
 @media (max-width: 1100px) {
   .metrics-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .grid-2 {
-    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 760px) {
   .hero {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    padding: 1.25rem;
   }
 
   .hero-actions {
+    justify-content: stretch;
     width: 100%;
   }
 
-
+  .hero-actions .btn {
+    flex: 1;
+    text-align: center;
+  }
+  
+  /* Força a tabela a manter uma estrutura legível gerando o scroll horizontal necessário */
+  .table {
+    min-width: 640px; 
+  }
 }
 
+@media (max-width: 560px) {
+  .metrics-grid {
+    grid-template-columns: 1fr; /* Um cartão por linha em celulares pequenos */
+  }
+
+  .panel {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .hero-actions {
+    flex-direction: column;
+  }
+}
+
+/* Ajustes de Impressão mantidos intactos */
 @media print {
   :global(body) {
     background: #fff;
@@ -511,26 +550,35 @@ onMounted(() => {
     margin: 0;
     height: auto;
     gap: 0.55rem;
+    padding: 0;
   }
 
   .panel {
     height: auto;
+    box-shadow: none;
+    padding: 0;
+    border: none;
   }
 
   .table-wrap {
     max-height: none;
-    overflow: visible;
+    overflow: hidden;
+    border: none;
   }
 
   .table {
-    overflow: visible;
+    overflow: hidden;
+  }
+
+  .table th {
+    background: #fff;
+    position: static;
   }
 
   .content {
-    overflow: visible;
+    overflow: hidden;
   }
 
-  .panel,
   .metric-card {
     box-shadow: none;
     break-inside: avoid;

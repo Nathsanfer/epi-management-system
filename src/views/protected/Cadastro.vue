@@ -76,14 +76,14 @@ const obterEmailUsuario = (item) => {
 // Carrega a lista de usuários, priorizando a RPC com e-mail autenticado.
 const carregarUsuarios = async () => {
   const { data: dataComEmailAuth, error: erroComEmailAuth } =
-    await supabase.rpc("listar_usuarios_com_email");
+    await supabase.rpc("listar_usuarios_com_email").eq("ativo", true);;
 
   if (!erroComEmailAuth && Array.isArray(dataComEmailAuth)) {
     usuarios.value = dataComEmailAuth;
     return;
   }
 
-  const { data, error } = await supabase.from("usuario").select("*");
+  const { data, error } = await supabase.from("usuario").select("*").eq("ativo", true);;
 
   if (error) {
     console.error("Erro ao carregar dados dos usuários:", error);
@@ -160,20 +160,20 @@ async function salvarEdicaoFuncao() {
 }
 
 // Remove um usuário após confirmação explícita.
-async function deletarUsuario(item) {
+async function inativarUsuario(item) {
   fecharMenuOpcoes();
 
   if (!item?.id) return;
 
   const confirmado = window.confirm(
-    `Tem certeza que deseja deletar o usuário "${item.nome_completo}"?`,
+    `Tem certeza que deseja inativar o usuário "${item.nome_completo}"?`,
   );
   if (!confirmado) return;
 
-  const { error } = await supabase.from("usuario").delete().eq("id", item.id);
+  const { error } = await supabase.from("usuario").update({ ativo: false }).eq("id", item.id);
 
   if (error) {
-    window.alert(`Erro ao deletar usuário: ${error.message}`);
+    window.alert(`Erro ao inativar usuário: ${error.message}`);
     return;
   }
 
@@ -259,9 +259,9 @@ onMounted(() => {
                 <button
                   class="options-menu-btn options-menu-btn--delete"
                   type="button"
-                  @click="deletarUsuario(item)"
+                  @click="inativarUsuario(item)"
                 >
-                  Deletar usuário
+                  Inativar usuário
                 </button>
               </div>
             </div>
@@ -276,6 +276,52 @@ onMounted(() => {
       @close="closeRegisterModal"
       @created="carregarUsuarios"
     />
+
+    <CadastroUsuarioModal
+      :open="modalRegister"
+      @close="closeRegisterModal"
+      @created="carregarUsuarios"
+    />
+
+    <div v-if="modalEditFuncao" class="container_modal" @click="fecharModalEditarFuncao">
+      <div class="modal_content modal_content--small" @click.stop>
+        <h3 class="modal_title">Editar Função</h3>
+        
+        <div class="modal_inputs">
+          <div class="container_input1">
+            <label class="label" for="select-funcao">Nova Função</label>
+            <select id="select-funcao" v-model="editFuncaoUsuario" class="select">
+              <option value="operador">Operador</option>
+              <option value="administrador">Administrador</option>
+            </select>
+          </div>
+          
+          <p v-if="erroEdicao" class="cadastro_feedback cadastro_feedback--erro">
+            {{ erroEdicao }}
+          </p>
+        </div>
+
+        <div class="modal_actions">
+          <button 
+            class="modal_btn modal_btn--secondary" 
+            type="button" 
+            :disabled="salvandoEdicao"
+            @click="fecharModalEditarFuncao"
+          >
+            Cancelar
+          </button>
+          <button 
+            class="modal_btn" 
+            type="button" 
+            :disabled="salvandoEdicao"
+            @click="salvarEdicaoFuncao"
+          >
+            {{ salvandoEdicao ? "Salvando..." : "Salvar" }}
+          </button>
+        </div>
+      </div>
+    </div>
+
   </section>
 </template>
 
@@ -703,6 +749,11 @@ onMounted(() => {
 /* Responsividade */
 
 @media (max-width: 568px) {
+  .page {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+  }
+  
   .info-list {
     display: flex;
     flex-direction: column;
@@ -711,6 +762,11 @@ onMounted(() => {
   .filter-btn {
     padding: 0 0.7rem;
     font-size: 0.75rem;
+  }
+
+  .container-scroll {
+    max-height: none;
+    overflow-y: hidden;
   }
 }
 

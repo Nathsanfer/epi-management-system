@@ -232,7 +232,8 @@ const carregarEquipamentosModal = async () => {
   const { data, error } = await supabase
     .from("equipamento")
     .select("id, nome, classificacao, imagem")
-    .order("nome", { ascending: true });
+    .order("nome", { ascending: true })
+    .eq("ativo", true);
 
   if (error) {
     console.error("Erro ao carregar equipamentos:", error);
@@ -770,7 +771,7 @@ onMounted(() => {
   margin-top: 1rem;
   width: 98%;
   margin-left: 0.5rem;
-  max-height: 510px;
+  max-height: 74.5vh;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -1105,6 +1106,7 @@ onMounted(() => {
 @media (max-width: 520px) {
   .search-input {
     min-width: 0;
+    padding: 0.7rem 0.75rem;
   }
 
   .element {

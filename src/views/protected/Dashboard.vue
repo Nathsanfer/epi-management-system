@@ -226,7 +226,8 @@ const carregarResumo = async () => {
 const carregarAlertas = async () => {
     const { data, error } = await supabase
         .from("equipamento")
-        .select("id, nome, classificacao, quantidade_minima, validade_certificado, estoque(quantidade)");
+        .select("id, nome, classificacao, quantidade_minima, validade_certificado, estoque(quantidade)")
+        .eq("ativo", true);
 
     if (error) throw error;
 
@@ -557,16 +558,15 @@ onMounted(() => {
 
 <style scoped>
 .dashboard-page {
-    margin-left: 0.4rem;
+    margin-left: 1rem;
     margin-right: 1rem;
     display: flex;
     flex-direction: column;
     gap: 0.8rem;
-    height: 96%;
+    height: 100%;
 }
 
 /* Estilização da seção da hero */
-
 .hero {
     display: flex;
     align-items: flex-end;
@@ -617,7 +617,6 @@ onMounted(() => {
 }
 
 /* Estilização de carregamento e erros */
-
 .feedback {
     margin: 0;
     color: #4c5670;
@@ -629,7 +628,6 @@ onMounted(() => {
 }
 
 /* Estilização da seção de indicadores */
-
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -640,7 +638,7 @@ onMounted(() => {
     border-radius: 18px;
     border: 1px solid #ebeef6;
     background: linear-gradient(145deg, #ffffff 0%, #f8faff 100%);
-    padding: 0.65rem;
+    padding: 0.8rem;
     box-shadow: 0 8px 18px rgba(31, 47, 80, 0.08);
 }
 
@@ -659,12 +657,10 @@ onMounted(() => {
 }
 
 /* Estilização geral dos painéis */
-
 .content-grid {
     display: grid;
     grid-template-columns: 1.2fr 0.8fr;
     gap: 0.85rem;
-    height: 68%;
 }
 
 .panel {
@@ -681,7 +677,6 @@ onMounted(() => {
     align-items: flex-end;
     gap: 0.6rem;
     margin-bottom: 0.8rem;
-    height: 3vh;
 }
 
 .panel-header h2 {
@@ -697,13 +692,11 @@ onMounted(() => {
 }
 
 /* Estilização do painel de movimentações */
-
 .distribution {
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
     margin-bottom: 0.9rem;
-    height: 7vh;
 }
 
 .distribution-row {
@@ -753,7 +746,7 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     gap: 0.55rem;
-    height: 37vh;
+    max-height: 400px;
     overflow-y: auto;
     overflow-x: hidden;
 }   
@@ -777,6 +770,7 @@ onMounted(() => {
     font-weight: 700;
     text-transform: capitalize;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .timeline-badge--entrega {
@@ -797,7 +791,6 @@ onMounted(() => {
 }
 
 /* Estilização do painel de alertas */
-
 .alerts-list {
     list-style: none;
     margin: 0;
@@ -805,7 +798,7 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     gap: 0.55rem;
-    height: 45.9vh;
+    max-height: 400px;
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -845,6 +838,7 @@ onMounted(() => {
     font-size: 0.72rem;
     white-space: nowrap;
     font-weight: 700;
+    flex-shrink: 0;
 }
 
 .alert-tag--critico {
@@ -862,25 +856,17 @@ onMounted(() => {
     color: #2f4f8f;
 }
 
-/* Estilização geral dos painéis */
-
 .empty {
     margin: 0;
     font-size: 0.84rem;
     color: #6f7b98;
 }
 
-/* Responsividade */
+/* ==========================================================================
+   MEDIA QUERIES (RESPONSIVIDADE)
+   ========================================================================== */
 
 @media (max-width: 1100px) {
-    .dashboard-page {
-        overflow-y: auto;
-    }
-
-    .dashboard-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
     .content-grid {
         grid-template-columns: 1fr;
     }
@@ -908,7 +894,9 @@ onMounted(() => {
 
 @media (max-width: 560px) {
     .dashboard-page {
-        padding: 0.5rem 0.5rem 1rem;
+        margin: 0;
+        padding: 0.5rem;
+        height: auto;
     }
 
     .dashboard-grid {
@@ -928,10 +916,44 @@ onMounted(() => {
     .panel-header {
         flex-direction: column;
         align-items: flex-start;
+        height: auto;
     }
 
     .alert-item {
         flex-direction: column;
+        align-items: flex-start;
+        gap: 0.6rem;
+    }
+
+    .alert-tag {
+        align-self: flex-start;
+    }
+}
+
+/* Ajustes finos específicos para telas de 480px ou menores */
+@media (max-width: 480px) {
+    .hero h1 {
+        font-size: 1.2rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 0.85rem;
+    }
+
+    .timeline-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.4rem;
+    }
+
+    .timeline-badge {
+        font-size: 0.65rem;
+        padding: 0.15rem 0.45rem;
+    }
+
+    .timeline, .alerts-list {
+        max-height: none; /* Remove o scroll interno individual no mobile extremo */
+        overflow-y: visible;
     }
 }
 </style>
